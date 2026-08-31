@@ -4,9 +4,13 @@ Este fichero da instrucciones a Claude Code (claude.ai/code) para trabajar con e
 
 ## Qué es esta carpeta
 
-Esta carpeta es una **plantilla de arranque** alojada en un vault de Obsidian que sirve de repositorio maestro de plantillas para poner en marcha proyectos nuevos (cada plantilla cubre un stack y una metodología distintos; puede haber varias hermanas al mismo nivel). Esta en concreto es la plantilla de **Spec-Driven Development (SDD)** con un stack fijo: Claude Code + GitHub Spec-Kit, Python, PostgreSQL/SQL Server, Obsidian como documentación, GitHub como control de versiones. Aquí no hay nada que compilar, lintar ni testear: lo que entrega esta carpeta son guías en Markdown más un árbol `files/` de artefactos de andamiaje (ficheros de contexto, skills, subagentes, hooks, prompts, plantillas de Obsidian) que se copian a *otros* proyectos, los downstream.
+Esta carpeta es una **GitHub Template Repository**: el mecanismo de puesta en marcha de un proyecto nuevo es el botón "Use this template" de GitHub (o `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`), no clonar ni copiar ficheros a mano desde aquí. Es la plantilla de **Spec-Driven Development (SDD)** con un stack fijo: Claude Code + GitHub Spec-Kit, Python, PostgreSQL/SQL Server, Obsidian como documentación, GitHub como control de versiones. Aquí no hay nada que compilar, lintar ni testear.
 
-Punto de entrada para un humano que lea esta plantilla: [`01_Guia_Uso_Plantilla.md`](01_Guia_Uso_Plantilla.md).
+El repo mezcla dos cosas en la misma raíz:
+- **Documentación de la propia plantilla** (este `CLAUDE.md`, `README.md`, `bootstrap.ps1`, `bootstrap_example.md`): solo tiene sentido mientras se está *editando la plantilla* o poniendo en marcha un proyecto nuevo; es descartable en el proyecto downstream una vez completada la puesta en marcha.
+- **La carga útil de andamiaje ya en su ruta final de destino** (`.claude/`, `.specify/memory/`, `docs/`, `.github/workflows/ci.yml`): esto es lo que "Use this template" entrega intacto a cada proyecto nuevo, sin ningún paso de copia.
+
+Punto de entrada para un humano que lea esta plantilla: [`README.md`](README.md).
 
 ## Tu rol aquí
 
@@ -25,31 +29,38 @@ Reglas de comportamiento (aplican a todo el trabajo en esta plantilla):
 
 Dentro de esta carpeta:
 
-- **`00_Guias_Inicio/`** — lectura previa recomendada: cómo instalar/usar Claude Code (`01_Guia_Claude_Code.md`) y la guía completa de la metodología SDD con referencia de comandos de Spec-Kit y prompts maestros (`02_Guia_Spec_Driven_Development.md`).
-- La plantilla propiamente dicha, dividida en cuatro guías secuenciales más una chuleta de comandos:
-  1. `01_Guia_Uso_Plantilla.md` — índice y la tabla de mapeo de carpetas (ruta origen en esta plantilla → ruta destino en un proyecto downstream).
-  2. `02_Instalacion_Spec_Kit.md` — instala Spec-Kit (CLI `specify`) en un proyecto destino.
-  3. `03_Configuracion_Harness.md` — la puesta en marcha ordenada y de una sola vez que debe seguir un proyecto nuevo (ficheros de contexto → skills/agentes/hooks → generar `CLAUDE.md` → estructura del vault de Obsidian → configuración de GitHub). Los pasos dependen del orden.
-  4. `04_Instalacion_Herramientas_Claude.md` — tabla de decisión skill vs. subagente vs. hook vs. `CLAUDE.md`, y qué hace cada skill/agente/hook recomendado en `files/native/`.
-  5. `install_example.md` — ejemplo de invocación de `install.ps1` (el atajo automatizado) con todos sus parámetros, listo para copiar, editar y pegar en PowerShell.
+- `README.md` — la plantilla propiamente dicha, en un único documento con estas secciones secuenciales:
+  1. Primeros pasos — índice y la tabla de qué contiene cada ruta que ya viene incluida en la raíz del repo al usar "Use this template".
+  2. Instalación de Spec-Kit — ejecuta `specify init --here` en el repo ya creado desde la plantilla.
+  3. Configuración del harness — la puesta en marcha ordenada y de una sola vez que debe seguir un proyecto nuevo (verificar que el harness ya está presente → rellenar placeholders → generar `CLAUDE.md` → Obsidian → GitHub). Los pasos dependen del orden.
+  4. Instalación de skills, subagentes y hooks — tabla de decisión skill vs. subagente vs. hook vs. `CLAUDE.md`, qué hace cada skill/agente/hook ya incluido en `.claude/`, y cómo añadir herramientas nuevas más adelante.
+  5. Estructura de la plantilla — tabla de referencia rápida de qué contiene cada ruta ya incluida al usar "Use this template", y qué ficheros de la plantilla (`README.md`, `bootstrap.ps1`, `bootstrap_example.md`) son descartables tras la puesta en marcha.
+  6. Principio rector de toda la plantilla — por qué todo `CLAUDE.md` que produce esta plantilla se mantiene corto y solo referencia `context/*.md` vía imports.
+- `bootstrap.ps1` — script PowerShell que ejecuta de un tirón el equivalente a las secciones "Instalación de Spec-Kit" y "Configuración del harness" del README (`specify init`, placeholders mecánicos, prompt de `CLAUDE.md` y, opcionalmente con `-SetupGitHub`, rama `dev`/branch protection/GitHub Project); se ejecuta dentro del repo del proyecto ya creado desde la plantilla, nunca dentro de esta plantilla.
+- `bootstrap_example.md` — ejemplo de invocación de `bootstrap.ps1` con todos sus parámetros, listo para copiar, editar y pegar en PowerShell.
 
-### `files/` — la carga de andamiaje
+### La carga de andamiaje (ya en su ruta final)
 
-Todo lo que hay bajo esta carpeta es contenido de plantilla inerte, que se copia tal cual al propio repositorio de un proyecto downstream (nunca lo ejecuta ni lo lee directamente Claude en *esta plantilla*, salvo cuando se está editando la plantilla). El mapeo de destino (también documentado en `01_Guia_Uso_Plantilla.md`):
+A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz de este mismo repositorio, en el sitio exacto donde las necesita un proyecto downstream — "Use this template" las entrega intactas:
 
-| Origen en esta plantilla | Destino en el proyecto destino |
+| Ruta | Contenido |
 |---|---|
-| `files/context/01_estilo_comportamiento.md` … `04_base_datos.md` | `.claude/context/01..04*.md`, importados en el `CLAUDE.md` del destino vía `@` |
-| `files/github/01_github_workflow.md` | `.claude/context/05_github.md` |
-| `files/native/skills/*` | `.claude/skills/*` (o `~/.claude/skills/*` si se reutiliza entre proyectos; a nivel de proyecto gana en caso de colisión de nombre) |
-| `files/native/agents/*` | `.claude/agents/*` |
-| `files/native/hooks/*` | `.claude/settings.json` + `.claude/hooks/*.sh` |
-| `files/obsidian/*` | El propio vault de Obsidian del proyecto destino, bajo `docs/` |
-| `files/prompts/*` | La biblioteca de prompts maestros del proyecto destino (también copiable a su vault) |
-| `files/specify/*` | `.specify/memory/` del proyecto destino (la carpeta ya existe tras `specify init`, con `constitution.md` dentro): `data-model.md` (modelo de datos canónico, con changelog y qué specs dependen de cada tabla), `schema-change-protocol.md` (protocolo obligatorio que `/speckit.specify` y `/speckit.plan` invocan antes de crear o modificar cualquier estructura, ver `files/prompts/02_Desarrollo.md`) y `db_ideas.md` (borrador humano de tablas concretas — nunca se importa en `CLAUDE.md`, ni se lee por comprobación automática de existencia: solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente) |
+| `.claude/context/01_estilo_comportamiento.md` … `04_base_datos.md` | Importados en el `CLAUDE.md` del proyecto vía `@` |
+| `.claude/context/05_github.md` | Flujo de trabajo con GitHub, importado igual con `@` |
+| `.claude/skills/*` | Skills recomendadas (a nivel de proyecto; `~/.claude/skills/*` es la alternativa global — gana el de proyecto en caso de colisión de nombre) |
+| `.claude/agents/*` | Subagentes recomendados |
+| `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados |
+| `docs/` | El esqueleto del vault de Obsidian del proyecto (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/`) |
+| `.claude/prompts/*` | La biblioteca de prompts maestros del proyecto (`01_ClaudeMD.md`, `02_Desarrollo.md`, `03_Cierre.md`, `04_Mantenimiento.md`) |
+| `.specify/memory/*` | `data-model.md` (modelo de datos canónico, con changelog y qué specs dependen de cada tabla), `schema-change-protocol.md` (protocolo obligatorio que `/speckit.specify` y `/speckit.plan` invocan antes de crear o modificar cualquier estructura, ver `.claude/prompts/02_Desarrollo.md`) y `db_ideas.md` (borrador humano de tablas concretas — nunca se importa en `CLAUDE.md`, ni se lee por comprobación automática de existencia: solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente). `specify init` añade aquí `constitution.md`. |
+| `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), estático y gateado por la existencia de `pyproject.toml` |
 
-La numeración en `context/` y en las guías de primer nivel es significativa y estructural: fija tanto el orden de lectura para humanos como el orden de import que exige `files/prompts/01_ClaudeMD.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Si añades, quitas o reordenas un fichero de contexto, actualiza todos los sitios que los enumeran: `01_Guia_Uso_Plantilla.md`, `03_Configuracion_Harness.md`, `04_Instalacion_Herramientas_Claude.md` y `files/prompts/01_ClaudeMD.md`.
+**Tensión aceptada**: al vivir `.claude/skills/`, `.claude/agents/` y `.claude/settings.json` en la raíz de este mismo repo, Claude Code los carga también mientras se edita la propia plantilla (no un proyecto Python real). Es un efecto colateral menor y aceptado a propósito — no hay mecanismo nativo de GitHub Template para excluir rutas al generar, y los hooks no tienen nada que ejecutar sobre ficheros Markdown.
+
+**Sobrescritura intencionada de este `CLAUDE.md`**: en el flujo downstream, el paso "Generar CLAUDE.md" (prompt `.claude/prompts/01_ClaudeMD.md`) sobrescribe este fichero con el `CLAUDE.md` real del proyecto — para entonces el humano ya no necesita las meta-instrucciones de esta plantilla.
+
+La numeración en `.claude/context/` es significativa y estructural: fija tanto el orden de lectura para humanos como el orden de import que exige `.claude/prompts/01_ClaudeMD.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Si añades, quitas o reordenas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_ClaudeMD.md`.
 
 ### Principio rector de los `CLAUDE.md` downstream
 
-Todo `CLAUDE.md` que produce esta plantilla (para proyectos destino y, por extensión, este mismo fichero) se mantiene corto a propósito: la sustancia vive en `context/*.md` y solo se trae vía imports `@`, cada uno con una frase de "cuándo es relevante consultarlo". Un `CLAUDE.md` sobrecargado hace que Claude ignore la mitad — no metas en línea nada que deba vivir en un fichero enlazado.
+Todo `CLAUDE.md` que produce esta plantilla (para proyectos destino y, por extensión, este mismo fichero) se mantiene corto a propósito: la sustancia vive en `.claude/context/*.md` y solo se trae vía imports `@`, cada uno con una frase de "cuándo es relevante consultarlo". Un `CLAUDE.md` sobrecargado hace que Claude ignore la mitad — no metas en línea nada que deba vivir en un fichero enlazado.
