@@ -39,9 +39,8 @@ docs/
 
 ## Plantillas Templater
 
-Los 3 ficheros fuente viven en `files/obsidian/templates/` de esta plantilla
-(`adr.md`, `spec.md`, `runbook.md`) y se copian a `docs/Meta/Templates/` al
-configurar el harness (ver `03_Configuracion_Harness.md`). Ejemplo del
+Los 3 ficheros (`adr.md`, `spec.md`, `runbook.md`) ya viven en `docs/Meta/Templates/`
+desde que el repo se creó con esta plantilla — no hay que copiarlos. Ejemplo del
 contenido de `@docs/Meta/Templates/adr.md`:
 
 ```markdown

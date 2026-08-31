@@ -31,7 +31,7 @@ no requiere plugin.
      ```
 3. Configura **Templater**:
    - `Settings → Templater → Template folder location` → `Meta/Templates/`.
-   - Crea ahí las plantillas de ADR, spec, runbook (ver `02_obsidian_workflow.md` para su contenido).
+   - Crea ahí las plantillas de ADR, spec, runbook (ver `Workflow.md` para su contenido).
 4. Configura **Dataview**:
    - `Settings → Dataview → Enable JavaScript Queries` (opcional, solo si vas a usar `dataviewjs`).
 
