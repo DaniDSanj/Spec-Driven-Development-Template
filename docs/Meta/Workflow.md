@@ -1,8 +1,8 @@
 # Cómo trabajar con Obsidian en este proyecto
 
-> Guarda esta nota como `@docs/Meta/Workflow.md`. Es la referencia de "cómo documentamos aquí" — el
-> asistente la lee (vía `@.claude/context/02_documentacion_mantenibilidad.md`) para saber cuándo y qué escribir
-> en el vault.
+> Guarda esta nota como `@docs/Meta/Workflow.md`. Es la referencia de "cómo documentamos aquí" — la
+> leen el subagente `docs-manager` y sus skills `docs-*` para saber la estructura del vault y qué
+> plantilla usa cada artefacto.
 
 ## Estructura de carpetas del vault
 
@@ -31,11 +31,11 @@ docs/
 | Artefacto | Se crea/actualiza en | Plantilla |
 |---|---|---|
 | Nota de Spec | Tras `/speckit.specify` + `/speckit.clarify` | `@docs/Meta/Templates/spec.md` |
-| ADR | Al tomar una decisión arquitectónica (ver regla en `@.claude/context/02_documentacion_mantenibilidad.md`) | `@docs/Meta/Templates/adr.md` |
+| ADR | Al tomar una decisión arquitectónica (ver la regla de qué merece ADR en la skill `docs-adr-writer`) | `@docs/Meta/Templates/adr.md` |
 | Diagrama ER | Tras `/speckit.plan` (cuando genera `data-model.md`) | Bloque ` ```mermaid erDiagram ` |
 | Runbook | Al cerrar una feature que introduce un procedimiento operativo nuevo (deploy especial, rollback, migración) | `@docs/Meta/Templates/runbook.md` |
 | Changelog | En la Fase 2 (cierre) de cada ciclo SDD | Espejo de `CHANGELOG.md` |
-| Dashboard (`docs/Meta/Overview.md`) | Bajo demanda, la primera vez que `obsidian-sync` actualiza el vault y el fichero todavía no existe | Query Dataview de esta misma nota (sección más abajo) |
+| Dashboard (`docs/Meta/Overview.md`) | Bajo demanda, la primera vez que una skill `docs-*` actualiza el vault y el fichero todavía no existe | Query Dataview de esta misma nota (sección más abajo) |
 
 ## Plantillas Templater
 
@@ -69,9 +69,10 @@ supersede:
 Punto de entrada del vault: enlaces de navegación a cada sección más una tabla de actividad reciente.
 Usa los campos `tipo`/`fecha`/`estado` que ya llevan las plantillas de `adr.md`, `spec.md` y
 `runbook.md` (sección "Plantillas Templater" de arriba) — no requiere metadatos nuevos. A diferencia
-de `Setup.md`/`Workflow.md`, **no** se crea en el scaffolding inicial: la skill `obsidian-sync` lo crea
-bajo demanda la primera vez que actualiza el vault y comprueba que el fichero no existe todavía (ver
-`@.claude/skills/obsidian-sync/SKILL.md`).
+de `Setup.md`/`Workflow.md`, **no** se crea en el scaffolding inicial: el subagente `docs-manager` lo
+crea bajo demanda la primera vez que actualiza el vault y comprueba que el fichero no existe todavía
+(es una precondición compartida por todas sus skills — ver `@.claude/agents/docs-manager.md` y
+`@.claude/skills/docs-vault-sync/SKILL.md`).
 
 `Specs/`, `Data-Model/` y `Runbooks/` no tienen una nota-índice de nombre fijo (son carpetas con una
 nota por feature/procedimiento), así que se listan con una query Dataview en vez de un wikilink — un
@@ -123,5 +124,5 @@ SORT fecha DESC
 
 ## Regla de actualización
 
-- La documentación se actualiza **al cierre de cada fase relevante del ciclo SDD**, no de forma diferida al final del proyecto. Ver la tabla de disparo en `@.claude/context/02_documentacion_mantenibilidad.md`.
+- La documentación se actualiza **al cierre de cada fase relevante del ciclo SDD**, no de forma diferida al final del proyecto. Ya no es una tabla que haya que recordar consultar: son los pasos numerados 2.3, 2.4, 5.3, 5.4 y 5.5 de `@.claude/prompts/02_spec_development.md`.
 - Todo enlace cruzado (Spec ↔ ADR ↔ Issue de GitHub ↔ Runbook) se hace con wikilinks `[[ ]]` para que Dataview y el grafo de Obsidian puedan navegar la trazabilidad completa del proyecto.

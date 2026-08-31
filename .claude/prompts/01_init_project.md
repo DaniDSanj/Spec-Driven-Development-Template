@@ -18,7 +18,6 @@ Vas a generar el fichero CLAUDE.md de la raíz de este proyecto.
 
 Antes de escribir nada, lee estos ficheros completos:
 - `@.claude/context/00_perfil_proyecto.md` — los datos concretos de este proyecto
-- `@.claude/context/02_documentacion_mantenibilidad.md`
 - `@.claude/context/05_github.md`
 
 Si en `00_perfil_proyecto.md` queda algún campo sin rellenar, aplica su "Regla de campos sin
@@ -67,13 +66,18 @@ llevar las convenciones cargadas de antemano.
 | Bocetar las tablas de una feature antes del plan | `/db-model-ideas` |
 | Reconciliar un esquema contra el modelo de datos canónico | `/db-model-protocol` |
 | Generar una migración, ya con el esquema aprobado | `/db-model-integration` |
+| Escribir un ADR de una decisión arquitectónica | `/docs-adr-writer` |
+| Sincronizar una nota del vault de Obsidian | `/docs-vault-sync` |
+| Generar o actualizar el `CHANGELOG.md` | `/docs-changelog` |
+| Documentar un procedimiento operativo nuevo | `/docs-runbook` |
+| Auditar la consistencia antes de cerrar una feature | `/docs-consistency-check` |
 
 Al terminar, muéstrame el CLAUDE.md generado y pregúntame si hay algún comando o convención local que
 se te haya escapado antes de darlo por definitivo.
 ```
 
 > Esta tabla de enrutado crece a medida que la plantilla migra el resto de `.claude/context/*.md` a
-> skills de dominio (`docs-*`, `git-*`). Mientras un fichero de contexto siga
+> skills de dominio — solo queda pendiente la familia `git-*`. Mientras un fichero de contexto siga
 > existiendo, se sigue importando con `@`.
 
 ## Revisión final

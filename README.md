@@ -141,9 +141,9 @@ Sigue paso a paso esta sección una vez que hayas creado el repositorio desde la
 Al haber creado el repo con "Use this template", estas rutas ya existen — no hay nada que copiar:
 
 ```bash
-ls .claude/context/       # 00_perfil_proyecto.md + 02_documentacion_mantenibilidad.md .. 05_github.md
-ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, adr-writer, obsidian-sync, verify-prepare, verify-validate
-ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, database-manager.md, spec-verifier.md
+ls .claude/context/       # 00_perfil_proyecto.md, 05_github.md
+ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, docs-adr-writer, docs-vault-sync, docs-changelog, docs-runbook, docs-consistency-check, verify-prepare, verify-validate
+ls .claude/agents/        # docs-manager.md, spec-critic.md, security-reviewer.md, database-manager.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
 ls .specify/memory/       # data-model.md, db_ideas.md (+ constitution.md tras specify init)
 ls docs/                  # Specs/, ADR/records/, Data-Model/, Runbooks/, Changelog/, Meta/
@@ -167,9 +167,9 @@ chmod +x .claude/hooks/*.sh
 ### 2.2 Rellenar el perfil del proyecto
 
 Todos los valores que cambian de un proyecto a otro viven en **un único fichero**,
-[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Los ficheros de contexto
-restantes (`02`, `04`, `05`) contienen solo convenciones y **no requieren relleno**: cuando necesitan
-un valor concreto, remiten al perfil.
+[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). El único fichero de contexto
+restante (`05_github.md`) contiene solo convenciones y **no requiere relleno**: cuando necesita un
+valor concreto, remite al perfil.
 
 | Fichero | Descripción |
 | --- | --- |
@@ -206,7 +206,7 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `02` y `05` no llevan placeholders: son solo convenciones).
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (`05_github.md` no lleva placeholders: son solo convenciones).
 - [ ] `.specify/memory/data-model.md` presente (`db_ideas.md` es opcional y mantiene corchetes de
       plantilla a propósito, no cuenta para este punto).
 - [ ] `CLAUDE.md` generado y revisado a mano (sobrescribe el de la plantilla).
@@ -261,11 +261,20 @@ Diseña el esquema de la feature y lo reconcilia contra el modelo canónico en c
 ##### `db-model-integration`
 Tras la aprobación explícita del esquema, entrega el comando exacto de la herramienta de migraciones y el DDL revisado —**nunca escribe el fichero de migración**, que el hook bloquea a propósito— y actualiza `.specify/memory/data-model.md` (entidad + changelog), el `data-model.md` local de la spec y las readaptaciones aprobadas. Se usa en el paso 4.2. Se apoya en el subagente `database-manager`.
 
-##### `adr-writer`
-Sabe el formato exacto de ADR, dónde vive (`docs/ADR/records/`), y aplica la regla append-only + supersede automáticamente.
+##### `docs-adr-writer`
+Redacta un ADR: ruta y numeración correlativa en `docs/ADR/records/`, formato Nygard (Contexto · Decisión · Consecuencias), regla append-only con `supersede:` en el ADR nuevo, criterio de qué decisión merece ADR y cuál no, y el índice Dataview de `docs/ADR/Overview.md`. Se usa en el paso 2.4 —el mismo día de la decisión, antes de `/speckit.tasks`— y en el 5.3 para lo que quedara suelto. Se apoya en el subagente `docs-manager`.
 
-##### `obsidian-sync`
-Sabe qué nota del vault actualizar tras cada evento de la tabla de disparo de [**02_documentacion_mantenibilidad.md**](./.claude/context/02_documentacion_mantenibilidad.md), y en qué formato (Dataview/wikilinks).
+##### `docs-vault-sync`
+Decide **qué** nota del vault toca cada evento del ciclo (`data-model.md` → `docs/Data-Model/[feature]-ER.md`; converge → `docs/Specs/[feature].md` y el espejo del changelog), con `docs/Meta/Overview.md` como precondición y wikilinks cruzados Spec ↔ ADR ↔ Issue ↔ Runbook. El formato de ADR, runbook y changelog lo delega en sus skills, para que no haya dos fuentes de verdad. Se usa en los pasos 2.3 y 5.3. Se apoya en el subagente `docs-manager`.
+
+##### `docs-changelog`
+Genera las entradas de `CHANGELOG.md` a partir de los Conventional Commits del rango de la feature, en formato Keep a Changelog 2.0.0, con la tabla de mapeo prefijo → sección y el tratamiento de `BREAKING CHANGE:` (que además exige comprobar que existe el ADR que lo documenta). Se usa en el paso 5.4. **Es una skill plana**: `docs-manager` no tiene `Bash` a propósito —así no puede commitear— y leer el rango con `git log` es justo lo que esta tarea necesita.
+
+##### `docs-runbook`
+Redacta un runbook en `docs/Runbooks/` cuando la feature introduce un procedimiento operativo nuevo (deploy especial, rollback, migración con ventana de mantenimiento). Plantilla `docs/Meta/Templates/runbook.md` y la regla dura de que un runbook sin rollback está incompleto. Se usa en el paso 5.3, invocada desde el resultado de `docs-vault-sync`. Se apoya en el subagente `docs-manager`.
+
+##### `docs-consistency-check`
+El checklist de seis puntos que se recorre antes de cerrar cualquier feature: docstrings y type hints, ADR si hubo decisión, Conventional Commits con ID de feature, `CHANGELOG.md`, nota de vault enlazada con su ADR e Issue, y UAT humana confirmada. **Audita con evidencia concreta, no redacta**; si algún punto sale ❌, se vuelve al 5.3/5.4. Se usa en el paso 5.5. También plana: necesita `git log`, y un auditor no debe llevar permisos de escritura.
 
 ##### `verify-prepare`
 Traduce `specs/<feature>/quickstart.md` (prosa) a `specs/<feature>/quickstart_agent.md`, un formato estructurado que clasifica cada escenario como `automatizable` o `manual` y lo mapea a su `FR-XXX`/`US-X` de `spec.md`. Se usa tras el GO del subagente `spec-critic`, o cuando `quickstart.md` cambia y `quickstart_agent.md` queda desactualizado (fusión idempotente: conserva el resultado de los escenarios sin cambios). Se apoya en el subagente `spec-verifier`.
@@ -285,8 +294,8 @@ Motor de crítica compartido por las skills `critic-requirements`, `critic-plan`
 ##### `database-manager`
 Motor de base de datos compartido por las skills `db-model-protocol` y `db-model-integration`. Contexto limpio: ve el modelo canónico y los ficheros de la feature, no el histórico de la conversación de planificación. No tiene `Bash` ni `Write` (`tools: Read, Grep, Glob, Edit`): no escribe migraciones ni las aplica, y no modifica el modelo canónico sin aprobación humana explícita y previa.
 
-##### `docs-updater`
-Tras `/speckit.converge`, redacta el ADR/Changelog/nota de vault correspondientes según la tabla de disparo, y los deja listos para revisión humana antes de commitear.
+##### `docs-manager`
+Motor de documentación compartido por las skills `docs-adr-writer`, `docs-vault-sync` y `docs-runbook`. Contexto limpio: ve los ficheros de la feature y el vault, no el histórico de la conversación. No tiene `Bash` (`tools: Read, Grep, Glob, Write, Edit`): escribe borradores pero no commitea, no edita un ADR ya aceptado y no inventa contenido que no esté en `spec.md`/`plan.md`/los commits.
 
 ##### `security-reviewer`
 Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/`.env`, migraciones, entradas no confiables) antes de `/speckit.converge`, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook `pre_edit_guard_sensitive.sh` (que bloquea la escritura) revisando la lógica una vez escrita.
@@ -319,7 +328,7 @@ cp ruta/al/origen/mi-agente-nuevo.md  .claude/agents/
 git add .claude/ && git commit -m "chore: añadir <herramienta> al harness"
 ```
 
-Al vivir dentro del repo, cualquier humano que clone el proyecto (o tú mismo en otra máquina) hereda automáticamente el mismo comportamiento del asistente — esto es parte de la mantenibilidad documentada en `.claude/context/02_documentacion_mantenibilidad.md`.
+Al vivir dentro del repo, cualquier humano que clone el proyecto (o tú mismo en otra máquina) hereda automáticamente el mismo comportamiento del asistente — es el mismo objetivo de mantenibilidad que persiguen las skills `docs-*`: que cualquier desarrollo pueda retomarlo un humano que no participó en la conversación con la IA.
 
 #### A nivel global
 Aplica a todos tus proyectos con este stack, ej. convenciones Python/PostgreSQL que repites siempre. Puedes promover una skill/subagente ya presente en un proyecto concreto (incluido este):
@@ -340,11 +349,10 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | Ruta | Contenido |
 | --- | --- |
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de contexto que se rellena** — referenciado desde `CLAUDE.md` con `@` |
-| `.claude/context/02_documentacion_mantenibilidad.md` | Convenciones de documentación — referenciadas desde `CLAUDE.md` con `@`. Las de código Python y las de base de datos ya no viven aquí: son las skills `dev-python-*` y `db-model-*` |
-| `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, Issues/Projects) — referenciado con `@` |
+| `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, trazabilidad y Conventional Commits, Issues/Projects) — el único fichero de contexto de convenciones que queda, referenciado desde `CLAUDE.md` con `@`. Las de código Python, base de datos y documentación ya no viven aquí: son las skills `dev-python-*`, `db-model-*` y `docs-*` |
 | `.specify/memory/data-model.md`, `db_ideas.md` | Estado real del proyecto, nunca método: el modelo de datos canónico, y la bandeja de entrada de ideas de tabla sin feature asignada (que ningún paso del ciclo lee — el boceto de una feature vive en `specs/<feature>/db_ideas.md`). Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
-| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-model-conventions`, `db-model-ideas`, `db-model-protocol`, `db-model-integration`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
-| `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `database-manager`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
+| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-model-conventions`, `db-model-ideas`, `db-model-protocol`, `db-model-integration`, `docs-adr-writer`, `docs-vault-sync`, `docs-changelog`, `docs-runbook`, `docs-consistency-check`, `verify-prepare`, `verify-validate`) |
+| `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `database-manager`, `docs-manager`, `security-reviewer`, `spec-verifier`) |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
 | `docs/` | Esqueleto del vault de Obsidian (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/` con las guías de setup/workflow y las plantillas de nota) |
@@ -354,4 +362,4 @@ Este `README.md`, `bootstrap.ps1` y `bootstrap_example.md` son documentación **
 
 ## Principio rector de toda la plantilla
 
-`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores y las convenciones que aún son fichero de contexto, con imports (`@.claude/context/02_documentacion_mantenibilidad.md`, etc.); el conocimiento ya migrado a skills, con la tabla de enrutado (`/critic-*`, `/dev-python-*`, `/db-model-*`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.
+`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores y las convenciones que aún son fichero de contexto, con imports (`@.claude/context/00_perfil_proyecto.md` y `@.claude/context/05_github.md`); el conocimiento ya migrado a skills, con la tabla de enrutado (`/critic-*`, `/dev-python-*`, `/db-model-*`, `/docs-*`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.

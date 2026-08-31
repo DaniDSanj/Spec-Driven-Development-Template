@@ -46,12 +46,11 @@ A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz 
 | Ruta | Contenido |
 |---|---|
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de cada proyecto (nombre, versión de Python, motor de BD, herramienta de migraciones, visibilidad…). Único fichero de contexto que un proyecto downstream rellena; lo rellena `bootstrap.ps1` y se completa a mano |
-| `.claude/context/02_documentacion_mantenibilidad.md` | Importado en el `CLAUDE.md` del proyecto vía `@` |
-| `.claude/context/05_github.md` | Flujo de trabajo con GitHub, importado igual con `@` |
+| `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, trazabilidad y Conventional Commits, cierre con `Closes #N`), importado en el `CLAUDE.md` del proyecto vía `@` |
 | `.claude/skills/*` | Skills recomendadas (a nivel de proyecto; `~/.claude/skills/*` es la alternativa global — gana el de proyecto en caso de colisión de nombre) |
 | `.claude/agents/*` | Subagentes recomendados |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados |
-| `docs/` | El esqueleto del vault de Obsidian del proyecto (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/`) |
+| `docs/` | El esqueleto del vault de Obsidian del proyecto (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/`). Quien escribe en él son las skills `docs-*` sobre el motor `docs-manager`; las convenciones de documentación ya no son un fichero de contexto |
 | `.claude/prompts/*` | La biblioteca de prompts maestros del proyecto: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (el ciclo completo de una spec, de la petición al merge) |
 | `.specify/memory/*` | Estado real del proyecto, nunca método: `data-model.md` (modelo de datos canónico, con changelog y qué specs dependen de cada tabla) y `db_ideas.md` (bandeja de entrada de ideas de tabla sin feature asignada — ningún paso del ciclo la lee; el boceto de una feature concreta vive en `specs/<feature>/db_ideas.md`). Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí `constitution.md`. El protocolo de cambio de esquema ya no vive aquí: es la skill `db-model-protocol` |
 | `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), estático y gateado por la existencia de `pyproject.toml` |
@@ -60,9 +59,9 @@ A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz 
 
 **Sobrescritura intencionada de este `CLAUDE.md`**: en el flujo downstream, el paso "Generar CLAUDE.md" (prompt `.claude/prompts/01_init_project.md`) sobrescribe este fichero con el `CLAUDE.md` real del proyecto — para entonces el humano ya no necesita las meta-instrucciones de esta plantilla.
 
-**Separación entre perfil y convenciones**: `00_perfil_proyecto.md` contiene solo *valores* de un proyecto concreto; los ficheros de contexto que quedan (`02`, `05`) contienen solo *convenciones*, iguales en todos los proyectos. Cuando una convención necesita un valor, remite al perfil en vez de declarar un placeholder propio — así `bootstrap.ps1` escribe en un único sitio y no hay doble fuente de verdad. Si añades un valor configurable nuevo, va al perfil, nunca a un fichero de convenciones.
+**Separación entre perfil y convenciones**: `00_perfil_proyecto.md` contiene solo *valores* de un proyecto concreto; el fichero de contexto que queda (`05`) contiene solo *convenciones*, iguales en todos los proyectos. Cuando una convención necesita un valor, remite al perfil en vez de declarar un placeholder propio — así `bootstrap.ps1` escribe en un único sitio y no hay doble fuente de verdad. Si añades un valor configurable nuevo, va al perfil, nunca a un fichero de convenciones.
 
-La numeración en `.claude/context/` fija el orden de lectura para humanos y el orden de import que enumera `.claude/prompts/01_init_project.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Los números **no se reasignan** al retirar un fichero: la secuencia tiene huecos (falta `01`, retirado con `spec-critic`; falta `03`, retirado con las skills `dev-*`; falta `04`, retirado con `database-manager` y las skills `db-*`) y así se queda, para que las referencias históricas sigan siendo legibles. Si añades o quitas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_init_project.md`.
+La numeración en `.claude/context/` fija el orden de lectura para humanos y el orden de import que enumera `.claude/prompts/01_init_project.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Los números **no se reasignan** al retirar un fichero: la secuencia tiene huecos (falta `01`, retirado con `spec-critic`; falta `02`, retirado con `docs-manager` y las skills `docs-*`; falta `03`, retirado con las skills `dev-*`; falta `04`, retirado con `database-manager` y las skills `db-*`) y así se queda, para que las referencias históricas sigan siendo legibles. Si añades o quitas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_init_project.md`.
 
 ### Principio rector de los `CLAUDE.md` downstream
 

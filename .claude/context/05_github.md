@@ -41,6 +41,19 @@
   `git config core.hooksPath .githooks`) que corre las mismas comprobaciones (`ruff`/`ty`/`pytest`)
   antes de dejar pushear — detiene el problema un paso antes, en la máquina local.
 
+## Trazabilidad y mensajes de commit
+
+- Cada commit referencia el identificador de la feature de Spec-Kit, ej.:
+  `feat(003-checkout): añade validación de stock antes de confirmar pedido`
+- Usa **Conventional Commits** (`feat`, `fix`, `refactor`, `docs`, `test`, `chore`,
+  `BREAKING CHANGE:` en el footer cuando aplique). Esto permite generar `CHANGELOG.md` de forma
+  automática (lo hace la skill `docs-changelog` en el paso 5.4 del ciclo) y mapea a SemVer.
+- `/speckit.taskstoissues` conecta cada tarea de `tasks.md` con un Issue de GitHub: no lo omitas en
+  features con más de ~5 tareas, es la pieza que permite seguir el estado desde GitHub Projects.
+
+Con esto la cadena spec → plan → tasks → issue → commit → PR queda navegable de extremo a extremo
+sin depender de la conversación con el asistente.
+
 ## Cierre de una feature con issues (PR + `Closes #N`)
 
 Cuando una feature tuvo Issues generados por `/speckit.taskstoissues`, la PR `feature/* → dev` que

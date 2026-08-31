@@ -13,10 +13,10 @@ un prompt por paso, en este orden.
 |---|---|
 | [0 — Encuadre](#fase-0--encuadre-solo-al-retomar-un-proyecto) | Reconstruir contexto y clasificar la petición |
 | [1 — Especificación](#fase-1--especificación) | `constitution` · `critic-requirements` · `specify` · `clarify` · `db-model-ideas` |
-| [2 — Plan](#fase-2--plan) | `db-model-conventions` + `plan` · `db-model-protocol` · `tasks` · `critic-plan` |
+| [2 — Plan](#fase-2--plan) | `db-model-conventions` + `plan` · `db-model-protocol` · `docs-vault-sync` · `docs-adr-writer` · `tasks` · `critic-plan` |
 | [3 — Preparación](#fase-3--preparación-de-la-ejecución) | `verify-prepare` · issues · rama de feature |
 | [4 — Implementación](#fase-4--implementación) | `dev-python-*` + `implement` · `db-model-integration` · `verify-validate` · `critic-verifications` · UAT |
-| [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · documentación · commit y PR |
+| [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · `docs-*` · commit y PR |
 
 ---
 
@@ -71,7 +71,7 @@ Solo en la primera feature del proyecto, o al cambiar los principios rectores.
 ```
 /speckit.constitution
 
-Establece los principios rectores de este proyecto: stack (Python [versión], PostgreSQL/SQL Server, Claude Code + Spec-Kit), disciplina de testing (TDD estricto en módulos de negocio, tests obligatorios antes de cerrar tarea), estilo de documentación (ver `@.claude/context/02_documentacion_mantenibilidad.md`), y cualquier restricción no negociable del proyecto (ej. no usar plataformas de pago).
+Establece los principios rectores de este proyecto: stack (Python [versión], PostgreSQL/SQL Server, Claude Code + Spec-Kit), disciplina de testing (TDD estricto en módulos de negocio, tests obligatorios antes de cerrar tarea), estilo de documentación (ADR en el vault de Obsidian, `CHANGELOG.md` en formato Keep a Changelog — lo detallan las skills `docs-*`), y cualquier restricción no negociable del proyecto (ej. no usar plataformas de pago).
 ```
 
 **Siguiente:** [1.1](#11--critic-requirements).
@@ -161,7 +161,7 @@ La skill se carga **antes** de `/speckit.plan`, no dentro, por el mismo motivo q
 es él quien genera `data-model.md`. Tenerlo con las convenciones puestas es lo que evita que haya que
 rehacer el esquema entero en 2.2.
 
-**Siguiente:** [2.2](#22--si-la-feature-toca-el-modelo-de-datos-db-model-protocol) si toca datos; si no, [2.4](#24--si-hubo-decisión-arquitectónica-adr).
+**Siguiente:** [2.2](#22--si-la-feature-toca-el-modelo-de-datos-db-model-protocol) si toca datos; si no, [2.4](#24--si-hubo-decisión-arquitectónica-docs-adr-writer).
 
 ### 2.2 — *(si la feature toca el modelo de datos)* `/db-model-protocol`
 
@@ -178,28 +178,32 @@ conflicto entre una spec antigua y la nueva necesidad, la antigua se adapta a la
 Lo aprobado aquí es lo que ejecuta el paso
 [4.2](#42--si-la-feature-incluye-una-migración-db-model-integration).
 
-**Siguiente:** [2.3](#23--si-el-plan-generó-data-modelmd-sincronizar-el-vault).
+**Siguiente:** [2.3](#23--si-el-plan-generó-data-modelmd-docs-vault-sync).
 
-### 2.3 — *(si el plan generó `data-model.md`)* Sincronizar el vault
-
-Primer disparo de la tabla de `@.claude/context/02_documentacion_mantenibilidad.md` sección 5.
+### 2.3 — *(si el plan generó `data-model.md`)* `/docs-vault-sync`
 
 ```
-El plan de esta feature ha generado data-model.md. Usa el subagente docs-updater para sincronizar el erDiagram Mermaid en la nota de arquitectura del vault (`docs/Data-Model/[feature]-ER.md`), siguiendo el formato de la skill obsidian-sync. Déjalo como borrador, sin commitear.
+Ejecuta la skill /docs-vault-sync para la feature activa: el plan ha generado data-model.md y hay que sincronizar el erDiagram Mermaid en `docs/Data-Model/[feature]-ER.md`. Déjalo como borrador, sin commitear.
 ```
 
-**Siguiente:** [2.4](#24--si-hubo-decisión-arquitectónica-adr).
+El `erDiagram` se genera a partir del `data-model.md` de la feature, no de memoria: si ambos
+difieren, gana el fichero y la skill lo señala. Si la nota ya existe, se actualiza — no se duplica.
 
-### 2.4 — *(si hubo decisión arquitectónica)* ADR
+**Siguiente:** [2.4](#24--si-hubo-decisión-arquitectónica-docs-adr-writer).
 
-Segundo disparo de la tabla de la sección 5: un ADR se escribe **el mismo día de la decisión y antes
-de continuar con `tasks`**, no en el cierre. Aplica a elección de tecnología/librería, modelo de
-datos, arquitectura de módulos, estrategia de autenticación/autorización, o cualquier trade-off que un
-futuro mantenedor podría cuestionar razonablemente.
+### 2.4 — *(si hubo decisión arquitectónica)* `/docs-adr-writer`
+
+Un ADR se escribe **el mismo día de la decisión y antes de continuar con `tasks`**, no en el cierre.
+Aplica a elección de tecnología/librería, modelo de datos, arquitectura de módulos, estrategia de
+autenticación/autorización, o cualquier trade-off que un futuro mantenedor podría cuestionar
+razonablemente. No aplica a detalles de implementación de una función concreta.
 
 ```
-En el plan de esta feature se ha tomado una decisión arquitectónica: [cuál]. Usa el subagente docs-updater para redactar el ADR correspondiente siguiendo la skill adr-writer. Déjalo como borrador, sin commitear.
+Ejecuta la skill /docs-adr-writer. En el plan de esta feature se ha tomado esta decisión arquitectónica: [cuál]. Déjalo como borrador, sin commitear.
 ```
+
+Un ADR = una decisión, y los ADR aceptados son append-only: si esta decisión reemplaza a otra, la
+skill crea un ADR nuevo con `supersede:` en vez de editar el antiguo.
 
 **Siguiente:** [2.5](#25--speckitchecklist).
 
@@ -408,36 +412,46 @@ Usa el subagente security-reviewer sobre los cambios de esta feature. Resuelve c
 ### 5.3 — Cierre de documentación
 
 ```
-Esta feature ha convergido y su UAT (si aplicaba) está confirmada. Usa el subagente docs-updater para:
-
-1. Determinar, según la tabla de disparo de `@.claude/context/02_documentacion_mantenibilidad.md`, qué artefactos de documentación faltan (ADR, nota de vault, runbook).
-2. Redactar cada uno como borrador, siguiendo el formato de las skills adr-writer y obsidian-sync.
-3. Presentarme un resumen de qué se creó o actualizó, sin hacer commit todavía.
+Esta feature ha convergido y su UAT (si aplicaba) está confirmada. Ejecuta la skill /docs-vault-sync para la feature activa, que determinará qué notas del vault faltan o están desfasadas. Si su resultado señala que falta un ADR o un runbook, ejecuta después /docs-adr-writer o /docs-runbook según corresponda. Déjalo todo como borrador, sin commitear.
 ```
 
-Los ADR de decisiones tomadas durante el plan ya se escribieron en el paso
-[2.4](#24--si-hubo-decisión-arquitectónica-adr); aquí solo se cubre lo que falte.
+`/docs-vault-sync` decide **qué** hace falta tocar; el formato de un ADR y el de un runbook viven en
+su propia skill, así que delega en ellas en vez de describirlo. Los ADR de decisiones tomadas
+durante el plan ya se escribieron en el paso
+[2.4](#24--si-hubo-decisión-arquitectónica-docs-adr-writer); aquí solo se cubre lo que falte.
 
-**Siguiente:** [5.4](#54--changelog).
+**Siguiente:** [5.4](#54--docs-changelog).
 
-### 5.4 — Changelog
+### 5.4 — `/docs-changelog`
 
 El `CHANGELOG.md` se actualiza **en el cierre**, nunca a mano en mitad del desarrollo: se genera a
 partir de los Conventional Commits del rango de la feature.
 
 ```
-Usa el subagente docs-updater para generar las entradas de CHANGELOG.md a partir de los commits Conventional Commits de esta feature, agrupadas en Added/Changed/Deprecated/Removed/Fixed/Security según el formato Keep a Changelog 2.0.0. Si algún commit lleva `BREAKING CHANGE:`, refleja la ruptura bajo `Changed`/`Removed` y comprueba que existe el ADR que la documenta. Déjalo como borrador, sin commitear.
+Carga la skill /docs-changelog y genera las entradas de CHANGELOG.md a partir de los Conventional Commits de esta feature. La rama base es `dev`. Déjalo como borrador, sin commitear.
 ```
 
-**Siguiente:** [5.5](#55--revisión-humana-y-checklist-de-consistencia).
+Es una skill **plana**, no forkea: el motor `docs-manager` no tiene `Bash` a propósito —así no puede
+commitear— y leer el rango de commits con `git log` es justo lo que esta tarea necesita. Si algún
+commit lleva `BREAKING CHANGE:`, la skill refleja la ruptura bajo `Changed`/`Removed` y comprueba
+que existe el ADR que la documenta.
 
-### 5.5 — Revisión humana y checklist de consistencia
+**Siguiente:** [5.5](#55--docs-consistency-check).
 
-- Revisa a mano los borradores generados (ADR, changelog, notas de vault).
-- Confirma que el checklist de consistencia de
-  `@.claude/context/02_documentacion_mantenibilidad.md` (sección 6) está completo: docstrings y type
-  hints, ADR si hubo decisión, Conventional Commits con ID de feature, `CHANGELOG.md` actualizado,
-  nota de la feature enlazada con su ADR e Issue, y UAT humana confirmada si aplicaba.
+### 5.5 — `/docs-consistency-check`
+
+Revisa primero a mano los borradores generados en [5.3](#53--cierre-de-documentación) y
+[5.4](#54--docs-changelog) (ADR, changelog, notas de vault). Después:
+
+```
+Carga la skill /docs-consistency-check y recorre el checklist para la feature activa antes de cerrarla.
+```
+
+Audita los seis puntos con evidencia concreta —docstrings y type hints, ADR si hubo decisión,
+Conventional Commits con ID de feature, `CHANGELOG.md`, nota de vault enlazada con su ADR e Issue, y
+UAT humana confirmada— y devuelve el veredicto. **No redacta lo que falte**: si algún punto sale ❌,
+se vuelve al paso 5.3 o 5.4 y se repite esta revisión. También es plana, por el mismo motivo que 5.4
+más uno propio: un auditor no debe llevar permisos de escritura.
 
 **Siguiente:** [5.6](#56--commit-push-y-pr-hacia-dev).
 
