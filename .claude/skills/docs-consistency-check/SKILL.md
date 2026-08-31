@@ -24,7 +24,7 @@ redactes tú la documentación que falte: eso es trabajo de las skills `docs-*` 
 |---|---|---|
 | 1 | Docstrings Google-style en todo lo público y type hints completos | Revisar los `.py` tocados por la feature; convención en `dev-python-coding` |
 | 2 | ADR creado o actualizado si hubo decisión arquitectónica | ¿Hay decisiones en `plan.md` sin ADR en `docs/ADR/records/`? Si falta alguno → `docs-adr-writer` |
-| 3 | Los commits siguen Conventional Commits y referencian el ID de feature | `git log <base>..HEAD --no-merges`; convención en `@.claude/context/05_github.md` |
+| 3 | Los commits siguen Conventional Commits y referencian el ID de feature | `git log <base>..HEAD --no-merges`; convención en `git-update-repo` |
 | 4 | `CHANGELOG.md` actualizado | ¿Tiene entradas del rango de esta feature? Si no → `docs-changelog` |
 | 5 | Nota de la feature en el vault, enlazada con su(s) ADR y su Issue de GitHub | `docs/Specs/[feature].md` existe y sus wikilinks resuelven. Si no → `docs-vault-sync` |
 | 6 | UAT humana confirmada si aplicaba | Lo audita en detalle la skill `critic-verifications` en el paso 4.4; aquí solo se confirma que ese paso se ejecutó y que no quedan escenarios `manual` en ⏳ PENDIENTE en `quickstart_agent.md` |

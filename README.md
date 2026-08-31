@@ -141,8 +141,8 @@ Sigue paso a paso esta sección una vez que hayas creado el repositorio desde la
 Al haber creado el repo con "Use this template", estas rutas ya existen — no hay nada que copiar:
 
 ```bash
-ls .claude/context/       # 00_perfil_proyecto.md, 05_github.md
-ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, docs-adr-writer, docs-vault-sync, docs-changelog, docs-runbook, docs-consistency-check, verify-prepare, verify-validate
+ls .claude/context/       # 00_perfil_proyecto.md
+ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, docs-adr-writer, docs-vault-sync, docs-changelog, docs-runbook, docs-consistency-check, git-update-repo, git-close-feature, git-run-actions, verify-prepare, verify-validate
 ls .claude/agents/        # docs-manager.md, spec-critic.md, security-reviewer.md, database-manager.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
 ls .specify/memory/       # data-model.md, db_ideas.md (+ constitution.md tras specify init)
@@ -167,9 +167,9 @@ chmod +x .claude/hooks/*.sh
 ### 2.2 Rellenar el perfil del proyecto
 
 Todos los valores que cambian de un proyecto a otro viven en **un único fichero**,
-[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). El único fichero de contexto
-restante (`05_github.md`) contiene solo convenciones y **no requiere relleno**: cuando necesita un
-valor concreto, remite al perfil.
+[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Es también el **único** fichero
+que queda en `.claude/context/`: las convenciones de método ya no son ficheros de contexto siempre
+activos, sino skills que se cargan bajo demanda y que leen de aquí el valor que necesiten.
 
 | Fichero | Descripción |
 | --- | --- |
@@ -196,7 +196,48 @@ Abre `claude` dentro del proyecto y pega el prompt de [**01_init_project**](./.c
 
 ### 2.5 Configurar GitHub
 
-Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/context/05_github.md) (rama `dev`, branch protection en `main`, GitHub Project, spending limit a $0 — el repo y `.github/workflows/ci.yml` ya existen desde el paso 0 de "Use this template").
+Lo que "Use this template" **ya dejó hecho**: el repo, `.github/workflows/ci.yml` y todo el árbol de
+`.claude/`. Lo que queda es configuración del lado de GitHub, una sola vez por repo. `bootstrap.ps1
+-SetupGitHub` automatiza (best-effort) los tres primeros puntos:
+
+- [ ] Crear la rama `dev` desde `main` y marcarla como rama por defecto para nuevos PRs.
+- [ ] Branch protection en **`dev` y `main`**: `required_status_checks.contexts = ["quality"]`, `strict: true`, `enforce_admins: true`. Las reglas y el porqué de cada ajuste están en la skill `git-update-repo`.
+- [ ] Crear un GitHub Project (Board/Kanban) vinculado al repo y activar sus Workflows nativas (abajo).
+- [ ] Fijar `Spending limit = $0` en `Settings → Billing` para evitar cargos accidentales de Actions (no tiene API ni CLI: es manual).
+
+#### Visibilidad del repositorio
+
+Decisión que se toma al crear el repo (paso 0) y se anota en el perfil del proyecto:
+
+| | Repo público | Repo privado |
+|---|---|---|
+| Minutos de GitHub Actions | Ilimitados (fair-use) | 2.000 min/mes (Linux-equivalent) en el plan Free |
+| Cuándo | El código no contiene datos ni lógica sensible | Hay credenciales, lógica de negocio propietaria o requisito de confidencialidad |
+
+Qué hacer si el repo es privado y el consumo se acerca al límite lo cubre la skill `git-run-actions`.
+
+#### GitHub Project: pasos web (una vez por proyecto)
+
+El tablero agrupa los Issues que genera `/speckit.taskstoissues` — no crees issues a mano si Spec-Kit
+ya los genera, para no duplicar la fuente de verdad.
+
+1. En el repo → pestaña **Projects** → **New project** → plantilla **Board** (Kanban).
+2. Vincular el repo: dentro del proyecto → **⋯ → Settings → General → Linked repositories → Add repository**.
+3. Columnas: por defecto trae el campo **Status** con `Todo` / `In Progress` / `Done`. Edítalas desde el header de cada columna (**···** → *Rename*/*Delete*) o añade nuevas con **+ Add status** (p. ej. `Backlog`, `In Review`) si el flujo lo requiere.
+4. Automatizaciones nativas: dentro del proyecto → **⋯ → Workflows**, activar:
+   - **Item added to project** → Status: `Todo`
+   - **Item reopened** → Status: `Todo`
+   - **Item closed** → Status: `Done`
+   - **Pull request merged** → Status: `Done`
+   - **Auto-add to project**: filtro `is:issue` (o `is:issue,pr`) sobre el repositorio, para que los issues generados por `/speckit.taskstoissues` entren solos al tablero.
+
+El Workflow "Pull request merged" es el que cierra los issues, y solo se dispara con `Closes #N` en la
+descripción de la PR (ver la skill `git-close-feature`).
+
+#### Lo que esta plantilla no usa
+
+- **GitHub Wiki**: no es la fuente de verdad de la documentación (esa es el vault de Obsidian). Actívala solo si necesitas una vista pública mínima sin dar acceso al vault completo.
+- **GitHub Pages**: opcional, para publicar documentación estática (ej. exportando el vault con MkDocs) si el proyecto necesita un sitio de docs público.
 
 ### 2.6 Verificación final
 
@@ -206,12 +247,12 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (`05_github.md` no lleva placeholders: son solo convenciones).
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (es el único fichero de contexto que hay).
 - [ ] `.specify/memory/data-model.md` presente (`db_ideas.md` es opcional y mantiene corchetes de
       plantilla a propósito, no cuenta para este punto).
 - [ ] `CLAUDE.md` generado y revisado a mano (sobrescribe el de la plantilla).
 - [ ] Vault de Obsidian con los plugins comunitarios instalados.
-- [ ] Repo GitHub con rama `dev`, CI y branch protection configurados.
+- [ ] Repo GitHub con rama `dev`, CI y branch protection en `dev` y `main` configurados.
 
 Con esto, el harness está listo y puedes empezar el primer ciclo SDD con [**02_spec_development**](./.claude/prompts/02_spec_development.md) (proyecto nuevo: entra directamente por el paso 1.0 y sáltate la Fase 0).
 
@@ -275,6 +316,15 @@ Redacta un runbook en `docs/Runbooks/` cuando la feature introduce un procedimie
 
 ##### `docs-consistency-check`
 El checklist de seis puntos que se recorre antes de cerrar cualquier feature: docstrings y type hints, ADR si hubo decisión, Conventional Commits con ID de feature, `CHANGELOG.md`, nota de vault enlazada con su ADR e Issue, y UAT humana confirmada. **Audita con evidencia concreta, no redacta**; si algún punto sale ❌, se vuelve al 5.3/5.4. Se usa en el paso 5.5. También plana: necesita `git log`, y un auditor no debe llevar permisos de escritura.
+
+##### `git-update-repo`
+Convenciones de Git y GitHub: modelo de ramas (`main` desplegable, `dev` de integración, `feature/<id-speckit>-<slug>`), la regla de que la rama de feature es obligatoria sin excepción por trivialidad con sus dos razones, el modelo de branch protection de `dev` y `main` con el comando `gh api .../protection` (y el aviso de que `PUT` sobrescribe el objeto entero), y el formato de los mensajes de commit (Conventional Commits con el ID de feature en el scope, que es lo que consume `docs-changelog`). Se carga en el paso 3.3 y sigue en contexto hasta el 5.6. **Es una skill plana**: son convenciones que necesita puestas el hilo que crea la rama y redacta los commits.
+
+##### `git-close-feature`
+El cierre en GitHub: commit, `push` de la rama y PR hacia `dev` con un **`Closes #N` repetido por cada issue** (nunca una lista con comas — GitHub solo cierra la referencia inmediatamente posterior a `Closes`), y la frontera dura de que el asistente propone activamente la PR `feature/* → dev` pero **nunca** abre la PR `dev → main`, que es del humano igual que el merge. Se usa en el paso 5.6. También plana: redactar el commit y el cuerpo de la PR exige saber qué se implementó y qué issues cubre, justo lo que un contexto limpio no tiene, y `push`/`gh pr create` son acciones irreversibles hacia fuera.
+
+##### `git-run-actions`
+Supervisión del CI de la PR: leer el estado del check `quality` (`gh pr checks`, `gh run view --log-failed`), diagnosticar cuál de los cuatro pasos del job falla (`ruff check` / `ruff format --check` / `ty check` / `pytest`) y proponer la corrección, más el coste de minutos de Actions según la visibilidad del repo y la red local `pre-push`. **No edita `ci.yml`**: es estático y gateado por `pyproject.toml` a propósito, y parchearlo para que un check pase silencia un fallo real. Se usa en el paso 5.7. Plana: diagnosticar el rojo exige ver el código recién escrito, y la corrección la aplica el mismo hilo.
 
 ##### `verify-prepare`
 Traduce `specs/<feature>/quickstart.md` (prosa) a `specs/<feature>/quickstart_agent.md`, un formato estructurado que clasifica cada escenario como `automatizable` o `manual` y lo mapea a su `FR-XXX`/`US-X` de `spec.md`. Se usa tras el GO del subagente `spec-critic`, o cuando `quickstart.md` cambia y `quickstart_agent.md` queda desactualizado (fusión idempotente: conserva el resultado de los escenarios sin cambios). Se apoya en el subagente `spec-verifier`.
@@ -348,10 +398,9 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 
 | Ruta | Contenido |
 | --- | --- |
-| `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de contexto que se rellena** — referenciado desde `CLAUDE.md` con `@` |
-| `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, trazabilidad y Conventional Commits, Issues/Projects) — el único fichero de contexto de convenciones que queda, referenciado desde `CLAUDE.md` con `@`. Las de código Python, base de datos y documentación ya no viven aquí: son las skills `dev-python-*`, `db-model-*` y `docs-*` |
+| `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de `.claude/context/`**, y el único import `@` del `CLAUDE.md`. Ninguna convención vive ya aquí: las de código Python, base de datos, documentación y Git son las skills `dev-python-*`, `db-model-*`, `docs-*` y `git-*` |
 | `.specify/memory/data-model.md`, `db_ideas.md` | Estado real del proyecto, nunca método: el modelo de datos canónico, y la bandeja de entrada de ideas de tabla sin feature asignada (que ningún paso del ciclo lee — el boceto de una feature vive en `specs/<feature>/db_ideas.md`). Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
-| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-model-conventions`, `db-model-ideas`, `db-model-protocol`, `db-model-integration`, `docs-adr-writer`, `docs-vault-sync`, `docs-changelog`, `docs-runbook`, `docs-consistency-check`, `verify-prepare`, `verify-validate`) |
+| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-model-conventions`, `db-model-ideas`, `db-model-protocol`, `db-model-integration`, `docs-adr-writer`, `docs-vault-sync`, `docs-changelog`, `docs-runbook`, `docs-consistency-check`, `git-update-repo`, `git-close-feature`, `git-run-actions`, `verify-prepare`, `verify-validate`) |
 | `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `database-manager`, `docs-manager`, `security-reviewer`, `spec-verifier`) |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
@@ -362,4 +411,4 @@ Este `README.md`, `bootstrap.ps1` y `bootstrap_example.md` son documentación **
 
 ## Principio rector de toda la plantilla
 
-`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores y las convenciones que aún son fichero de contexto, con imports (`@.claude/context/00_perfil_proyecto.md` y `@.claude/context/05_github.md`); el conocimiento ya migrado a skills, con la tabla de enrutado (`/critic-*`, `/dev-python-*`, `/db-model-*`, `/docs-*`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.
+`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores del proyecto, con un único import (`@.claude/context/00_perfil_proyecto.md`); todas las convenciones de método, con la tabla de enrutado a skills (`/critic-*`, `/dev-python-*`, `/db-model-*`, `/docs-*`, `/git-*`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.

@@ -37,8 +37,10 @@
   defecto PostgreSQL, que ya es el default documentado).
 
 .PARAMETER Visibility
-  Visibilidad del repositorio: private o public. Se fija en el perfil del proyecto y, si se usa
-  -SetupGitHub, decide el flag de `gh api` para branch protection.
+  Visibilidad del repositorio: private o public. Se fija en el perfil del proyecto, de donde la lee
+  la skill git-run-actions para razonar sobre el consumo de minutos de GitHub Actions. Nota: en repos
+  privados sin GitHub Pro/Team la API de branch protection no está disponible, así que -SetupGitHub
+  dejará ese punto como paso manual.
 
 .PARAMETER SpecifyScriptType
   Tipo de scripts que instala Spec-Kit (sh, ps o py) — evita el selector interactivo de
@@ -47,7 +49,7 @@
 .PARAMETER SetupGitHub
   Si se indica, intenta completar en el repositorio remoto ya existente (creado al usar la plantilla)
   lo que "Use this template" no hace por sí solo: rama dev, marcarla como rama por defecto, branch
-  protection en main y un GitHub Project. Requiere `gh` ya instalado y autenticado (`gh auth login` es
+  protection en dev y main, y un GitHub Project. Requiere `gh` ya instalado y autenticado (`gh auth login` es
   un paso manual, con login por navegador, que este script no automatiza). Pide confirmación explícita
   antes de tocar nada remoto.
 
@@ -358,18 +360,18 @@ if ($SetupGitHub) {
     $nameWithOwner = gh repo view --json nameWithOwner -q .nameWithOwner
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($nameWithOwner)) {
         Write-Warn2 'no se pudo obtener el nombre del repositorio remoto (owner/repo); ¿tiene origin configurado?'
-        Add-ManualStep 'Completar a mano el checklist de .claude/context/05_github.md (rama dev, branch protection, Project, spending limit)'
+        Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, Project, spending limit)'
     } else {
         Write-Host ''
         Write-Host "Esto va a, sobre '$nameWithOwner':" -ForegroundColor Yellow
         Write-Host "  - hacer commit de los placeholders rellenados y publicarlo en la rama actual"
         Write-Host "  - crear y publicar la rama 'dev', y marcarla como rama por defecto"
-        Write-Host "  - intentar activar branch protection en 'main' y crear un GitHub Project"
+        Write-Host "  - intentar activar branch protection en 'dev' y 'main', y crear un GitHub Project"
         $confirm = Read-Host '¿Continuar? (s/N)'
 
         if ($confirm -ine 's') {
             Write-Skip 'automatización de GitHub cancelada por el usuario'
-            Add-ManualStep 'Completar a mano el checklist de .claude/context/05_github.md (rama dev, branch protection, Project, spending limit)'
+            Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, Project, spending limit)'
         } else {
             try {
                 git add -A
@@ -396,19 +398,27 @@ if ($SetupGitHub) {
                     Add-ManualStep "Marcar 'dev' como rama por defecto a mano (Settings -> Branches -> Default branch)"
                 }
 
-                try {
-                    $protectionBody = @{
-                        required_status_checks       = @{ strict = $true; contexts = @('quality') }
-                        enforce_admins                = $false
-                        required_pull_request_reviews = @{ required_approving_review_count = 0 }
-                        restrictions                   = $null
-                    } | ConvertTo-Json -Depth 5
-                    $protectionBody | gh api --method PUT "repos/$nameWithOwner/branches/main/protection" --input -
-                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE (branch protection no suele estar disponible en repos privados sin GitHub Pro/Team)" }
-                    Write-Ok "branch protection activada en 'main'"
-                } catch {
-                    Write-Warn2 "no se pudo activar branch protection automáticamente: $($_.Exception.Message)"
-                    Add-ManualStep 'Activar branch protection en main a mano (Settings -> Branches): requiere PR + CI en verde'
+                # Modelo documentado por la skill git-update-repo: idéntico en 'dev' y 'main'.
+                # enforce_admins = $true es lo que hace que la rama de feature sea obligatoria de
+                # verdad (el push directo a 'dev' falla incluso siendo owner).
+                # required_approving_review_count = 0: PR obligatoria, pero sin aprobación de un
+                # tercero, o en un repo de una sola persona 'main' quedaría bloqueado.
+                $protectionBody = @{
+                    required_status_checks        = @{ strict = $true; contexts = @('quality') }
+                    enforce_admins                = $true
+                    required_pull_request_reviews = @{ required_approving_review_count = 0 }
+                    restrictions                  = $null
+                } | ConvertTo-Json -Depth 5
+
+                foreach ($branch in @('dev', 'main')) {
+                    try {
+                        $protectionBody | gh api --method PUT "repos/$nameWithOwner/branches/$branch/protection" --input -
+                        if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE (branch protection no suele estar disponible en repos privados sin GitHub Pro/Team)" }
+                        Write-Ok "branch protection activada en '$branch'"
+                    } catch {
+                        Write-Warn2 "no se pudo activar branch protection en '$branch': $($_.Exception.Message)"
+                        Add-ManualStep "Activar branch protection en '$branch' a mano (Settings -> Branches): check 'quality' requerido, strict, enforce admins — ver la seccion 2.5 (Configurar GitHub) del README.md"
+                    }
                 }
 
                 try {
@@ -420,19 +430,19 @@ if ($SetupGitHub) {
                     gh project link $projectJson.number --owner $owner --repo $nameWithOwner | Out-Null
                     if ($LASTEXITCODE -ne 0) { throw "gh project link devolvió el código $LASTEXITCODE" }
                     Write-Ok "GitHub Project '$ProjectName' creado y vinculado (número $($projectJson.number))"
-                    Add-ManualStep 'Configurar a mano las Workflows nativas del GitHub Project recién creado (Item added/closed, PR merged, Auto-add) — ver checklist de .claude/context/05_github.md'
+                    Add-ManualStep 'Configurar a mano las Workflows nativas del GitHub Project recién creado (Item added/closed, PR merged, Auto-add) — ver checklist de la seccion 2.5 (Configurar GitHub) del README.md'
                 } catch {
                     Write-Warn2 "no se pudo crear el GitHub Project automáticamente: $($_.Exception.Message)"
-                    Add-ManualStep 'Crear el GitHub Project (Board/Kanban) y vincularlo al repo a mano — ver checklist de .claude/context/05_github.md'
+                    Add-ManualStep 'Crear el GitHub Project (Board/Kanban) y vincularlo al repo a mano — ver checklist de la seccion 2.5 (Configurar GitHub) del README.md'
                 }
             } catch {
                 Write-Warn2 "automatización de GitHub interrumpida: $($_.Exception.Message)"
-                Add-ManualStep 'La configuración de rama/branch protection no terminó bien: revisa el estado en GitHub y completa a mano lo que falte (ver .claude/context/05_github.md)'
+                Add-ManualStep 'La configuración de rama/branch protection no terminó bien: revisa el estado en GitHub y completa a mano lo que falte (ver la seccion 2.5 (Configurar GitHub) del README.md)'
             }
         }
     }
 } else {
-    Add-ManualStep 'Completar a mano el checklist de .claude/context/05_github.md (rama dev, branch protection, Project) — o relanzar este script con -SetupGitHub'
+    Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, Project) — o relanzar este script con -SetupGitHub'
 }
 
 Add-ManualStep 'Fijar Spending limit = $0 en GitHub (Settings -> Billing) — no tiene API/CLI'
@@ -447,7 +457,7 @@ Write-Host 'Automatizado por el script:' -ForegroundColor Green
 Write-Host '  - specify init (.specify/memory/constitution.md)'
 Write-Host '  - datos del proyecto en .claude/context/00_perfil_proyecto.md'
 if ($SetupGitHub) {
-    Write-Host '  - rama dev y (best-effort) branch protection / GitHub Project'
+    Write-Host '  - rama dev y (best-effort) branch protection en dev y main / GitHub Project'
 }
 
 Write-Host ''

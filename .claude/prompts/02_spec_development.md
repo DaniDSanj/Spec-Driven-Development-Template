@@ -14,9 +14,9 @@ un prompt por paso, en este orden.
 | [0 — Encuadre](#fase-0--encuadre-solo-al-retomar-un-proyecto) | Reconstruir contexto y clasificar la petición |
 | [1 — Especificación](#fase-1--especificación) | `constitution` · `critic-requirements` · `specify` · `clarify` · `db-model-ideas` |
 | [2 — Plan](#fase-2--plan) | `db-model-conventions` + `plan` · `db-model-protocol` · `docs-vault-sync` · `docs-adr-writer` · `tasks` · `critic-plan` |
-| [3 — Preparación](#fase-3--preparación-de-la-ejecución) | `verify-prepare` · issues · rama de feature |
+| [3 — Preparación](#fase-3--preparación-de-la-ejecución) | `verify-prepare` · issues · `git-update-repo` |
 | [4 — Implementación](#fase-4--implementación) | `dev-python-*` + `implement` · `db-model-integration` · `verify-validate` · `critic-verifications` · UAT |
-| [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · `docs-*` · commit y PR |
+| [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · `docs-*` · `git-close-feature` · `git-run-actions` |
 
 ---
 
@@ -29,7 +29,7 @@ Sáltate esta fase entera si estás en un proyecto nuevo o continuando un ciclo 
 ```
 Vamos a retomar este proyecto. Antes de proponer nada, reconstruye el contexto:
 
-1. Lee CLAUDE.md y todos sus imports en `@.claude/context/`.
+1. Lee CLAUDE.md y su import `@.claude/context/00_perfil_proyecto.md`.
 2. Lee el CHANGELOG.md completo para entender qué se ha entregado hasta ahora.
 3. Lee los ADR más recientes en el vault (`@docs/ADR/records/`, ordenados por fecha) para entender las decisiones arquitectónicas vigentes.
 4. Revisa el estado de specs/ y GitHub Issues abiertos para ver si hay trabajo a medias.
@@ -54,7 +54,7 @@ tres casos.
 
 | Categoría | Fases que se ejecutan |
 |---|---|
-| **CORRECCIÓN** | Salta las Fases 1 y 2. Entra en [3.3](#33--crear-la-rama-de-feature) (rama), luego [4.1](#41--speckitimplement) con el fix + test de regresión, y cierra por la [Fase 5](#fase-5--cierre) (la entrada de changelog va bajo `Fixed`). |
+| **CORRECCIÓN** | Salta las Fases 1 y 2. Entra en [3.3](#33--git-update-repo) (rama), luego [4.1](#41--speckitimplement) con el fix + test de regresión, y cierra por la [Fase 5](#fase-5--cierre) (la entrada de changelog va bajo `Fixed`). |
 | **MEJORA PEQUEÑA** | [Fase 1](#fase-1--especificación) completa. En la Fase 2, si el plan original de la feature sigue siendo válido, salta de [2.1](#21--speckitplan) directo a [2.6](#26--speckittasks). Luego Fases 3, 4 y 5 normales. |
 | **FUNCIONALIDAD NUEVA** | Ciclo completo desde [1.0](#10--speckitconstitution-solo-la-primera-vez). |
 
@@ -279,16 +279,19 @@ Features con más de ~5 tareas.
 Ejecútalo **antes** de implementar, nunca después: es lo que da seguimiento en tiempo real a las
 tareas mientras se hacen, no un registro histórico de lo ya terminado.
 
-**Siguiente:** [3.3](#33--crear-la-rama-de-feature).
+**Siguiente:** [3.3](#33--git-update-repo).
 
-### 3.3 — Crear la rama de feature
+### 3.3 — `/git-update-repo`
 
-Obligatoria **siempre, sin excepción por trivialidad** (ver `@.claude/context/05_github.md`): `dev`
-tiene `required_status_checks` con `enforce_admins: true`, así que GitHub rechaza cualquier push
-directo, incluso del owner del repo.
+La rama de feature es obligatoria **siempre, sin excepción por trivialidad**: `dev` tiene
+`required_status_checks` con `enforce_admins: true`, así que GitHub rechaza cualquier push directo,
+incluso del owner del repo. La skill trae además el formato de los mensajes de commit, que sigue
+haciendo falta durante toda la Fase 4 y en el paso [5.6](#56--git-close-feature).
 
 ```
-Crea la rama `feature/<id-speckit>-<slug>` a partir de `dev` y cámbiate a ella. Confírmame el nombre exacto de rama que has usado.
+/git-update-repo
+
+Crea la rama de esta feature a partir de `dev` y cámbiate a ella. Confírmame el nombre exacto de rama que has usado.
 ```
 
 Referencia de lo que ejecutará el asistente (no lo lances tú a mano):
@@ -380,7 +383,7 @@ Espera tu confirmación explícita **por cada punto** antes de continuar.
 
 En cuanto las tareas y su UAT (automática y manual) queden validadas, el asistente debe proponer
 activamente —como parte del cierre de esta tarea, no como ocurrencia tardía— abrir la PR hacia `dev`
-con `Closes #N` por cada issue que resuelve (paso [5.6](#56--commit-push-y-pr-hacia-dev)).
+con `Closes #N` por cada issue que resuelve (paso [5.6](#56--git-close-feature)).
 
 **Siguiente:** [5.1](#51--speckitconverge).
 
@@ -453,12 +456,17 @@ UAT humana confirmada— y devuelve el veredicto. **No redacta lo que falte**: s
 se vuelve al paso 5.3 o 5.4 y se repite esta revisión. También es plana, por el mismo motivo que 5.4
 más uno propio: un auditor no debe llevar permisos de escritura.
 
-**Siguiente:** [5.6](#56--commit-push-y-pr-hacia-dev).
+**Siguiente:** [5.6](#56--git-close-feature).
 
-### 5.6 — Commit, push y PR hacia `dev`
+### 5.6 — `/git-close-feature`
+
+El commit y, sin dejarlo para más tarde, la PR hacia `dev`: es lo que dispara el cierre automático de
+los issues al mergear. El asistente puede abrir PRs de `feature/*` a `dev`; la PR `dev → main`, no.
 
 ```
-Commitea los cambios de esta feature siguiendo Conventional Commits, referenciando el ID de la feature en el mensaje.
+/git-close-feature
+
+Commitea los cambios de esta feature, empuja la rama y abre la PR hacia `dev` con un `Closes #N` por cada issue que esta feature resuelve. Confírmame el número de PR resultante.
 ```
 
 Referencia de lo que ejecutará el asistente:
@@ -466,34 +474,23 @@ Referencia de lo que ejecutará el asistente:
 ```bash
 git add .
 git commit -m "feat(<id-feature>): <resumen>"
-```
-
-Después, la PR hacia `dev` — no la dejes para más tarde: es lo que dispara el cierre automático de los
-issues al mergear. `@.claude/context/05_github.md` permite al asistente abrir PRs de `feature/*` a
-`dev` cuando se le pide explícitamente, a diferencia de la PR `dev → main`.
-
-```
-Empuja la rama `feature/<id-speckit>-<slug>` y abre una PR hacia `dev` que incluya `Closes #N` por cada issue que esta feature resuelve. Confírmame el número de PR resultante.
-```
-
-Referencia de lo que ejecutará el asistente:
-
-```bash
 git push origin feature/<id-speckit>-<slug>
-gh pr create --base dev --head feature/<id-speckit>-<slug> --title "feat(<id-feature>): <resumen>" --body "Closes #N, Closes #M"
+gh pr create --base dev --head feature/<id-speckit>-<slug> --title "feat(<id-feature>): <resumen>" --body "Closes #47, Closes #48"
 ```
 
 **Formato obligatorio**: repite la palabra clave por cada issue (`Closes #47, Closes #48`), nunca una
 lista separada por comas — GitHub solo cierra la referencia que sigue inmediatamente a `Closes`.
 
-**Siguiente:** [5.7](#57--supervisar-el-ci-de-la-pr).
+**Siguiente:** [5.7](#57--git-run-actions).
 
-### 5.7 — Supervisar el CI de la PR
+### 5.7 — `/git-run-actions`
 
 La PR no se puede mergear hasta que el job `quality` de `.github/workflows/ci.yml` esté en verde
 (`required_status_checks` con `strict: true`).
 
 ```
+/git-run-actions
+
 Comprueba el estado del check `quality` en la PR #N. Si está en rojo, muéstrame el log del paso que falla y propón la corrección.
 ```
 
@@ -503,7 +500,7 @@ Comprueba el estado del check `quality` en la PR #N. Si está en rojo, muéstram
 
 - Mergea tú mismo la PR `feature/* → dev` una vez el CI esté en verde.
 - Abre tú mismo (el humano) la PR de `dev` a `main` cuando corresponda — el asistente **no** lo hace
-  de forma autónoma (ver `@.claude/context/05_github.md`).
+  de forma autónoma (frontera dura de `git-close-feature`).
 
 Con esto la feature queda cerrada y trazada de extremo a extremo: spec → plan → tasks → issues →
 implementación → UAT → ADR/changelog/vault → commit → PR con `Closes #N` → (el humano mergea) →

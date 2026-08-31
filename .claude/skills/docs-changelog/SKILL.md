@@ -51,5 +51,5 @@ tengan contenido, en este orden: `Added`, `Changed`, `Deprecated`, `Removed`, `F
 ## Al terminar
 
 Muestra las entradas generadas agrupadas por sección, di qué commits descartaste y por qué, y señala
-cualquier commit que no siguiera Conventional Commits (es un incumplimiento de
-`@.claude/context/05_github.md`, no algo que debas normalizar en silencio).
+cualquier commit que no siguiera Conventional Commits (es un incumplimiento de la convención de
+`git-update-repo`, no algo que debas normalizar en silencio).
