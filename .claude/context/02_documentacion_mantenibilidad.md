@@ -58,4 +58,4 @@
 - [ ] Commits siguen Conventional Commits y referencian el ID de feature.
 - [ ] `CHANGELOG.md` actualizado.
 - [ ] Nota de la feature en el vault enlazada con su(s) ADR(s) y su Issue de GitHub.
-- [ ] UAT humana confirmada si aplicaba (ver `@.claude/context/01_estilo_comportamiento.md`).
+- [ ] UAT humana confirmada si aplicaba (lo audita la skill `critic-verifications`).

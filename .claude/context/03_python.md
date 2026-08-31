@@ -64,7 +64,8 @@ Cuál aplica a este proyecto: ver **Python → Tipo de proyecto y framework** en
 - Cobertura mínima objetivo: ver **Python → Cobertura mínima objetivo** en
   `@.claude/context/00_perfil_proyecto.md`.
 - Todo endpoint/función de negocio nuevo requiere al menos un test antes de que la tarea se marque
-  como cerrada en `tasks.md` (coherente con la regla de validación de `01_estilo_comportamiento.md`).
+  como cerrada en `tasks.md` (coherente con el criterio de cierre que audita la skill
+  `critic-verifications`).
 
 ## Gestión de dependencias
 

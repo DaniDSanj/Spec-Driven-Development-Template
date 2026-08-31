@@ -141,8 +141,8 @@ Sigue paso a paso esta sección una vez que hayas creado el repositorio desde la
 Al haber creado el repo con "Use this template", estas rutas ya existen — no hay nada que copiar:
 
 ```bash
-ls .claude/context/       # 00_perfil_proyecto.md + 01_estilo_comportamiento.md .. 05_github.md
-ls .claude/skills/        # adr-writer, db-schema-design, obsidian-sync, verify-prepare, verify-validate
+ls .claude/context/       # 00_perfil_proyecto.md + 02_documentacion_mantenibilidad.md .. 05_github.md
+ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, adr-writer, db-schema-design, obsidian-sync, verify-prepare, verify-validate
 ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, db-designer.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
 ls .specify/memory/       # data-model.md, schema-change-protocol.md, db_ideas.md (+ constitution.md tras specify init)
@@ -167,7 +167,7 @@ chmod +x .claude/hooks/*.sh
 ### 2.2 Rellenar el perfil del proyecto
 
 Todos los valores que cambian de un proyecto a otro viven en **un único fichero**,
-[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Los ficheros `01..05_*.md`
+[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Los ficheros `02..05_*.md`
 contienen solo convenciones y **no requieren relleno**: cuando necesitan un valor concreto, remiten
 al perfil.
 
@@ -206,7 +206,7 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `01..05_*.md` no llevan placeholders: son solo convenciones).
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `02..05_*.md` no llevan placeholders: son solo convenciones).
 - [ ] `.specify/memory/data-model.md` y `.specify/memory/schema-change-protocol.md` presentes
       (`db_ideas.md` es opcional y mantiene corchetes de plantilla a propósito, no cuenta para este
       punto).
@@ -235,6 +235,15 @@ Regla de decisión rápida para elegir el mecanismo correcto:
 
 Todas las skills son solo **recomendaciones** para este stack en concreto y ya vienen incluidas en `.claude/skills/` al crear el repo desde esta plantilla — no hay que instalarlas:
 
+##### `critic-requirements`
+Audita una petición de feature contra las 10 categorías de ambigüedad **antes** de escribir la spec, y devuelve el prompt aumentado listo para pegar en `/speckit.specify` más la lista de huecos de alcance que hay que cerrar primero, ordenada por impacto. Se usa en el paso 1.1 del ciclo. Se apoya en el subagente `spec-critic`.
+
+##### `critic-plan`
+Revisión adversarial de `spec.md`/`plan.md`/`tasks.md` en contexto limpio, con los cinco ejes (supuestos, consistencia cruzada, ambigüedades, riesgos y modos de fallo, sobre-ingeniería). Devuelve el listado completo de hallazgos y un veredicto GO/NO-GO; ante NO-GO indica a qué paso del ciclo hay que volver. Se usa en el paso 2.8, obligatoriamente antes de `/speckit.implement`. Se apoya en el subagente `spec-critic`.
+
+##### `critic-verifications`
+Audita el criterio de cierre antes de converger: qué tareas exigen UAT humana, cuáles se han cerrado sin evidencia objetiva, y si la clasificación `automatizable`/`manual` de `quickstart_agent.md` es correcta. No ejecuta ni escribe nada — esa es la frontera con `verify-validate`. Se usa en el paso 4.4. Se apoya en el subagente `spec-critic`.
+
 ##### `db-schema-design`
 Encapsula las convenciones de [**04_base_datos.md**](./.claude/context/04_base_datos.md) (naming, campos de auditoría, política de índices) para que el asistente las aplique al diseñar cualquier tabla nueva sin tener que repetírselas cada vez. Válida tanto para PostgreSQL como para SQL Server.
 
@@ -257,7 +266,7 @@ Puedes añadir más según crezca el proyecto (ej. `fastapi-endpoint-scaffold`, 
 Todos los subagentes son solo **recomendaciones** para este stack en concreto y ya vienen incluidos en `.claude/agents/` al crear el repo desde esta plantilla — no hay que instalarlos:
 
 ##### `spec-critic`
-Revisor adversarial de spec/plan (usado en [**01_estilo_comportamiento.md**](./.claude/context/01_estilo_comportamiento.md), sección 1). Contexto limpio: solo ve `spec.md`/`plan.md`/`tasks.md`, no el histórico de la conversación de planificación.
+Motor de crítica compartido por las skills `critic-requirements`, `critic-plan` y `critic-verifications`. Contexto limpio: solo ve los ficheros de la feature, no el histórico de la conversación de planificación. Es read-only por construcción (`tools: Read, Grep, Glob`): observa y reporta, nunca escribe ni corrige lo que encuentra roto.
 
 ##### `db-designer`
 Propone y valida esquemas SQL contra las convenciones de [**04_base_datos.md**](./.claude/context/04_base_datos.md); se invoca durante `/speckit.plan` o `/speckit.implement` cuando la feature toca el modelo de datos.
@@ -317,10 +326,10 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | Ruta | Contenido |
 | --- | --- |
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de contexto que se rellena** — referenciado desde `CLAUDE.md` con `@` |
-| `.claude/context/01..04_*.md` | Convenciones de estilo, documentación, Python y base de datos — referenciadas desde `CLAUDE.md` con `@` |
+| `.claude/context/02..04_*.md` | Convenciones de documentación, Python y base de datos — referenciadas desde `CLAUDE.md` con `@` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, Issues/Projects) — referenciado con `@` |
 | `.specify/memory/data-model.md`, `schema-change-protocol.md`, `db_ideas.md` | Modelo de datos canónico y protocolo de cambio de esquema que usan `/speckit.specify` y `/speckit.plan`; `db_ideas.md` (borrador humano de tablas concretas) solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente. Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
-| `.claude/skills/*` | Skills recomendadas (`db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
+| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
 | `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `db-designer`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
@@ -331,4 +340,4 @@ Este `README.md`, `bootstrap.ps1` y `bootstrap_example.md` son documentación **
 
 ## Principio rector de toda la plantilla
 
-`CLAUDE.md` se mantiene deliberadamente corto. Toda la sustancia vive en `context/*.md`, y `CLAUDE.md` solo la referencia con imports (`@.claude/context/01_estilo_comportamiento.md`, etc.). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas. Cada fichero de contexto se activa solo cuando es relevante para la tarea en curso.
+`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores y las convenciones que aún son fichero de contexto, con imports (`@.claude/context/02_documentacion_mantenibilidad.md`, etc.); el conocimiento ya migrado a skills, con la tabla de enrutado (`/critic-requirements`, `/critic-plan`, `/critic-verifications`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.

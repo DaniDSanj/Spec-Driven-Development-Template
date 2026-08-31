@@ -19,8 +19,8 @@ Al recibir el diff o los ficheros tocados por una feature:
 4. **Secretos y datos sensibles**: credenciales, tokens o claves hardcodeadas; logs que puedan filtrar
    PII o secretos; uso correcto de variables de entorno/`.env` (nunca versionadas en Git).
 5. **Migraciones de datos**: si la feature incluye una migración sobre datos ya existentes, confirma
-   que está señalada como pendiente de UAT humana (ver `.claude/context/01_estilo_comportamiento.md`)
-   y que no hay pérdida de datos irreversible sin backup previo.
+   que está señalada como pendiente de UAT humana (criterio auditado por la skill
+   `critic-verifications`) y que no hay pérdida de datos irreversible sin backup previo.
 6. **Dependencias**: cualquier paquete nuevo añadido — señala si es de origen dudoso o tiene
    vulnerabilidades conocidas relevantes para la versión usada.
 

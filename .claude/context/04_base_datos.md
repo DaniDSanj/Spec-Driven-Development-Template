@@ -99,8 +99,8 @@ humano.
   rellenar, pregunta al usuario qué herramienta usa el proyecto antes de generar o proponer una
   migración. Toda migración se genera, se revisa a mano y se versiona en Git; nunca se aplican
   cambios de esquema directamente en la BD sin migración.
-- Toda migración que afecte a datos ya existentes en producción requiere UAT humana explícita (ver
-  `@.claude/context/01_estilo_comportamiento.md`) antes de aplicarse.
+- Toda migración que afecte a datos ya existentes en producción requiere UAT humana explícita antes de
+  aplicarse (la skill `critic-verifications` audita que esté señalada como tal).
 
 ---
 

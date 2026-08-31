@@ -18,7 +18,6 @@ Vas a generar el fichero CLAUDE.md de la raíz de este proyecto.
 
 Antes de escribir nada, lee estos ficheros completos:
 - `@.claude/context/00_perfil_proyecto.md` — los datos concretos de este proyecto
-- `@.claude/context/01_estilo_comportamiento.md`
 - `@.claude/context/02_documentacion_mantenibilidad.md`
 - `@.claude/context/03_python.md`
 - `@.claude/context/04_base_datos.md`
@@ -42,13 +41,36 @@ Reglas de generación del CLAUDE.md:
 4. Para cada línea que escribas, aplica el test: "si quito esto, ¿cometerías un error evitable?". Si
    la respuesta es no, no la incluyas.
 5. Estructura el fichero en secciones cortas con encabezados Markdown: Descripción, Comandos, Imports
-   de contexto, Estructura de ramas, Notas del entorno.
+   de contexto, Reglas de conversación, Enrutado a skills, Estructura de ramas, Notas del entorno.
 6. El resultado completo debe caber cómodamente en una pantalla y media — si al terminar supera eso,
    revisa qué puedes mover a un import en vez de dejarlo inline.
+
+Además de los imports, copia inline en el CLAUDE.md estos dos bloques tal cual. No son convenciones de
+dominio (esas viven en skills, que se cargan solas cuando hacen falta): el primero gobierna la
+conversación contigo, que ningún subagente puede tener, y el segundo es lo que me permite delegar sin
+llevar las convenciones cargadas de antemano.
+
+## Reglas de conversación
+
+- No rellenes huecos de alcance en silencio: lo que la petición no diga y sea necesario, se pregunta.
+- Una pregunta cada vez, esperando respuesta antes de la siguiente.
+- Ninguna tarea con UAT humana pendiente se marca como cerrada sin mi confirmación explícita.
+
+## Enrutado a skills
+
+| Cuando toque… | Invoca |
+|---|---|
+| Tomar requisitos antes de escribir una spec | `/critic-requirements` |
+| Revisar spec/plan/tasks antes de implementar | `/critic-plan` |
+| Auditar el criterio de cierre antes de converger | `/critic-verifications` |
 
 Al terminar, muéstrame el CLAUDE.md generado y pregúntame si hay algún comando o convención local que
 se te haya escapado antes de darlo por definitivo.
 ```
+
+> Esta tabla de enrutado crece a medida que la plantilla migra el resto de `.claude/context/*.md` a
+> skills de dominio (`dev-*`, `db-*`, `docs-*`, `git-*`). Mientras un fichero de contexto siga
+> existiendo, se sigue importando con `@`.
 
 ## Revisión final
 

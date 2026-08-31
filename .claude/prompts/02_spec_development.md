@@ -12,10 +12,10 @@ un prompt por paso, en este orden.
 | Fase | Qué cubre |
 |---|---|
 | [0 — Encuadre](#fase-0--encuadre-solo-al-retomar-un-proyecto) | Reconstruir contexto y clasificar la petición |
-| [1 — Especificación](#fase-1--especificación) | `constitution` · requisitos · `specify` · `clarify` |
-| [2 — Plan](#fase-2--plan) | `plan` · esquema de datos · `tasks` · crítica adversarial |
+| [1 — Especificación](#fase-1--especificación) | `constitution` · `critic-requirements` · `specify` · `clarify` |
+| [2 — Plan](#fase-2--plan) | `plan` · esquema de datos · `tasks` · `critic-plan` |
 | [3 — Preparación](#fase-3--preparación-de-la-ejecución) | `verify-prepare` · issues · rama de feature |
-| [4 — Implementación](#fase-4--implementación) | `implement` · migración · validación · UAT |
+| [4 — Implementación](#fase-4--implementación) | `implement` · migración · `verify-validate` · `critic-verifications` · UAT |
 | [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · documentación · commit y PR |
 
 ---
@@ -74,26 +74,32 @@ Solo en la primera feature del proyecto, o al cambiar los principios rectores.
 Establece los principios rectores de este proyecto: stack (Python [versión], PostgreSQL/SQL Server, Claude Code + Spec-Kit), disciplina de testing (TDD estricto en módulos de negocio, tests obligatorios antes de cerrar tarea), estilo de documentación (ver `@.claude/context/02_documentacion_mantenibilidad.md`), y cualquier restricción no negociable del proyecto (ej. no usar plataformas de pago).
 ```
 
-**Siguiente:** [1.1](#11--auditoría-de-requisitos).
+**Siguiente:** [1.1](#11--critic-requirements).
 
-### 1.1 — Auditoría de requisitos
+### 1.1 — `/critic-requirements`
 
-Antes de escribir la spec, cubre las categorías de ambigüedad de
-`@.claude/context/01_estilo_comportamiento.md` sección 2. No se rellenan huecos de alcance en
-silencio: lo que no esté claro se pregunta, y de una pregunta cada vez.
+```
+Ejecuta la skill /critic-requirements sobre esta petición: [descripción breve de la feature].
+```
 
-Esta auditoría va integrada en el prompt del paso siguiente.
+Audita la petición contra las 10 categorías de ambigüedad y devuelve dos cosas: la lista de huecos de
+alcance a cerrar (ordenada por impacto) y el **prompt aumentado** listo para pegar en el paso
+siguiente. Los huecos marcados *(bloqueante)* se resuelven **antes** de pasar a 1.2, preguntando de
+una pregunta cada vez. No se rellena ningún hueco de alcance en silencio.
 
-**Siguiente:** [1.2](#12--speckitspecify).
+**Siguiente:** [1.2](#12--speckitspecify), con los bloqueantes ya resueltos.
 
 ### 1.2 — `/speckit.specify`
+
+Pega el prompt aumentado que devolvió [1.1](#11--critic-requirements) detrás del comando. Si no
+ejecutaste 1.1, esta es la plantilla mínima equivalente:
 
 ```
 /speckit.specify
 
 Quiero construir: [descripción breve de la feature].
 
-Antes de escribir la spec, entrevístame en detalle usando AskUserQuestion. Pregunta sobre alcance funcional, modelo de datos, flujo de UX, requisitos no funcionales (rendimiento, seguridad, escala), integraciones externas, casos límite, restricciones técnicas y terminología del dominio — cubre las categorías de `@.claude/context/01_estilo_comportamiento.md` sección 2. No hagas preguntas obvias; dig into las partes difíciles que quizá no he considerado. No asumas nada en silencio: si algo es ambiguo, pregunta antes de escribir spec.md.
+Antes de escribir la spec, entrevístame en detalle usando AskUserQuestion sobre las categorías que quedaron abiertas: [las que liste 1.1]. No hagas preguntas obvias; dig into las partes difíciles que quizá no he considerado. No asumas nada en silencio: si algo es ambiguo, pregunta antes de escribir spec.md, y de una pregunta cada vez.
 
 Antes de definir cualquier estructura de datos, consulta .specify/memory/data-model.md y sigue el protocolo descrito en .specify/memory/schema-change-protocol.md para cualquier creación o modificación de esquema.
 ```
@@ -198,18 +204,21 @@ En el plan de esta feature se ha tomado una decisión arquitectónica: [cuál]. 
 Si reporta hallazgos, resuélvelos (vuelve a [1.2](#12--speckitspecify), [2.1](#21--speckitplan) o
 [2.6](#26--speckittasks) según corresponda) antes de continuar.
 
-**Siguiente:** [2.8](#28--revisión-adversarial-obligatoria).
+**Siguiente:** [2.8](#28--critic-plan-obligatorio).
 
-### 2.8 — Revisión adversarial (obligatoria)
+### 2.8 — `/critic-plan` (obligatorio)
 
-Obligatoria antes de implementar, ver `@.claude/context/01_estilo_comportamiento.md` sección 1.
+Obligatorio antes de implementar, en cualquier feature no trivial.
 
 ```
-Antes de implementar, usa el subagente spec-critic para revisar spec.md, plan.md y tasks.md de esta feature. Si reporta un NO-GO, resuélvelo antes de continuar. Muéstrame el listado completo de hallazgos, no solo un resumen.
+Ejecuta la skill /critic-plan para la feature activa.
 ```
 
-Ante un **NO-GO** no se sigue "con reservas": se resuelve la objeción volviendo al paso que la origina
-y se repite esta revisión.
+Revisa `spec.md`, `plan.md` y `tasks.md` en contexto limpio (solo esos tres ficheros, no el histórico
+de la conversación de planificación) y devuelve el listado completo de hallazgos más un veredicto
+**GO/NO-GO**. Ante un **NO-GO** no se sigue "con reservas": se resuelve la objeción volviendo al paso
+que indique la ruta de resolución ([1.2](#12--speckitspecify), [2.1](#21--speckitplan) o
+[2.6](#26--speckittasks)) y se repite esta revisión entera.
 
 **Siguiente:** [3.1](#31--verify-prepare), solo con un GO.
 
@@ -225,8 +234,8 @@ Ejecuta la skill /verify-prepare para la feature activa.
 
 Traduce `specs/<feature>/quickstart.md` (generado en el paso [2.1](#21--speckitplan)) a
 `specs/<feature>/quickstart_agent.md`, clasificando cada escenario como `automatizable` o `manual`.
-Se ejecuta después del GO de `spec-critic` a propósito — traducir un `quickstart.md` que la crítica
-adversarial todavía podría hacer cambiar sería trabajo desechable. Si ya existía una versión previa de
+Se ejecuta después del GO de [2.8](#28--critic-plan-obligatorio) a propósito — traducir un
+`quickstart.md` que la crítica adversarial todavía podría hacer cambiar sería trabajo desechable. Si ya existía una versión previa de
 `quickstart_agent.md`, la fusión es idempotente: conserva el resultado de los escenarios sin cambios.
 
 **Siguiente:** [3.2](#32--speckittaskstoissues).
@@ -271,7 +280,7 @@ git checkout -b feature/<id-speckit>-<slug> dev
 ```
 /speckit.implement
 
-Implementa las tareas de esta feature siguiendo las convenciones de `@.claude/context/03_python.md`. Para cada tarea que toque una superficie de usuario o datos de producción, señala explícitamente que requiere UAT humana antes de marcarla como cerrada (ver `@.claude/context/01_estilo_comportamiento.md` sección 3) y describe qué debo probar exactamente.
+Implementa las tareas de esta feature siguiendo las convenciones de `@.claude/context/03_python.md`. Para cada tarea que toque una superficie de usuario o datos de producción, señala explícitamente que requiere UAT humana antes de marcarla como cerrada y describe qué debo probar exactamente.
 ```
 
 **Siguiente:** [4.2](#42--si-la-feature-incluye-una-migración-aplicarla) si hay migración; si no, [4.3](#43--verify-validate-repite-tras-cada-corrección).
@@ -300,22 +309,22 @@ nada por su cuenta. Si reporta `ERRÓNEA` o `INALCANZABLE`, corrige el código s
 este paso — **no avances mientras queden puntos sin resolver de este tipo**. Los escenarios `manual`
 quedan `PENDIENTE` a propósito: se confirman en el paso [4.5](#45--uat-manual).
 
-**Siguiente:** [4.4](#44--auditoría-del-cierre-de-tareas).
+**Siguiente:** [4.4](#44--critic-verifications).
 
-### 4.4 — Auditoría del cierre de tareas
+### 4.4 — `/critic-verifications`
 
-La validación automática en verde es condición necesaria pero **no suficiente** para cerrar una
-feature (`@.claude/context/01_estilo_comportamiento.md` sección 3).
+La validación automática en verde es condición necesaria pero **no suficiente** para cerrar una feature.
 
 ```
-Antes de converger, audita el cierre de las tareas de esta feature:
-
-1. ¿Toda tarea que toca una superficie de usuario, una regla de negocio con impacto económico/legal/de datos sensibles, o una migración sobre datos de producción, está marcada como pendiente de UAT humana?
-2. ¿Alguna tarea se ha marcado como cerrada sin evidencia objetiva (test en verde, salida de comando, dato comprobado)?
-3. ¿La clasificación automatizable/manual de quickstart_agent.md es correcta, o hay algún escenario marcado como automatizable que en realidad exige juicio humano?
-
-Muéstrame el listado completo de tareas que no cumplen alguno de los tres puntos.
+Ejecuta la skill /critic-verifications para la feature activa.
 ```
+
+Audita tres cosas y devuelve el listado completo de lo que incumple alguna: que toda tarea con
+superficie de usuario, regla de negocio con impacto económico/legal/de datos sensibles o migración
+sobre datos de producción esté marcada como pendiente de UAT humana; que ninguna tarea se haya cerrado
+sin evidencia objetiva; y que la clasificación `automatizable`/`manual` de `quickstart_agent.md` sea
+correcta. No ejecuta ni corrige nada — a diferencia de [4.3](#43--verify-validate-repite-tras-cada-corrección),
+que sí ejecuta escenarios y escribe en `quickstart_agent.md`.
 
 **Siguiente:** [4.5](#45--uat-manual).
 

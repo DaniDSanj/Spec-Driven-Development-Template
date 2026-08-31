@@ -46,7 +46,7 @@ A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz 
 | Ruta | Contenido |
 |---|---|
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de cada proyecto (nombre, versión de Python, motor de BD, herramienta de migraciones, visibilidad…). Único fichero de contexto que un proyecto downstream rellena; lo rellena `bootstrap.ps1` y se completa a mano |
-| `.claude/context/01_estilo_comportamiento.md` … `04_base_datos.md` | Importados en el `CLAUDE.md` del proyecto vía `@` |
+| `.claude/context/02_documentacion_mantenibilidad.md` … `04_base_datos.md` | Importados en el `CLAUDE.md` del proyecto vía `@` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub, importado igual con `@` |
 | `.claude/skills/*` | Skills recomendadas (a nivel de proyecto; `~/.claude/skills/*` es la alternativa global — gana el de proyecto en caso de colisión de nombre) |
 | `.claude/agents/*` | Subagentes recomendados |
