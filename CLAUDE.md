@@ -46,7 +46,7 @@ A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz 
 | Ruta | Contenido |
 |---|---|
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de cada proyecto (nombre, versión de Python, motor de BD, herramienta de migraciones, visibilidad…). Único fichero de contexto que un proyecto downstream rellena; lo rellena `bootstrap.ps1` y se completa a mano |
-| `.claude/context/02_documentacion_mantenibilidad.md` … `04_base_datos.md` | Importados en el `CLAUDE.md` del proyecto vía `@` |
+| `.claude/context/02_documentacion_mantenibilidad.md`, `04_base_datos.md` | Importados en el `CLAUDE.md` del proyecto vía `@` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub, importado igual con `@` |
 | `.claude/skills/*` | Skills recomendadas (a nivel de proyecto; `~/.claude/skills/*` es la alternativa global — gana el de proyecto en caso de colisión de nombre) |
 | `.claude/agents/*` | Subagentes recomendados |
@@ -60,9 +60,9 @@ A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz 
 
 **Sobrescritura intencionada de este `CLAUDE.md`**: en el flujo downstream, el paso "Generar CLAUDE.md" (prompt `.claude/prompts/01_init_project.md`) sobrescribe este fichero con el `CLAUDE.md` real del proyecto — para entonces el humano ya no necesita las meta-instrucciones de esta plantilla.
 
-**Separación entre perfil y convenciones**: `00_perfil_proyecto.md` contiene solo *valores* de un proyecto concreto; `01..05_*.md` contienen solo *convenciones*, iguales en todos los proyectos. Cuando una convención necesita un valor, remite al perfil en vez de declarar un placeholder propio — así `bootstrap.ps1` escribe en un único sitio y no hay doble fuente de verdad. Si añades un valor configurable nuevo, va al perfil, nunca a un fichero de convenciones.
+**Separación entre perfil y convenciones**: `00_perfil_proyecto.md` contiene solo *valores* de un proyecto concreto; los ficheros de contexto que quedan (`02`, `04`, `05`) contienen solo *convenciones*, iguales en todos los proyectos. Cuando una convención necesita un valor, remite al perfil en vez de declarar un placeholder propio — así `bootstrap.ps1` escribe en un único sitio y no hay doble fuente de verdad. Si añades un valor configurable nuevo, va al perfil, nunca a un fichero de convenciones.
 
-La numeración en `.claude/context/` es significativa y estructural: fija tanto el orden de lectura para humanos como el orden de import que exige `.claude/prompts/01_init_project.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Si añades, quitas o reordenas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_init_project.md`.
+La numeración en `.claude/context/` fija el orden de lectura para humanos y el orden de import que enumera `.claude/prompts/01_init_project.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Los números **no se reasignan** al retirar un fichero: la secuencia tiene huecos (falta `01`, retirado con `spec-critic`; falta `03`, retirado con las skills `dev-*`) y así se queda, para que las referencias históricas sigan siendo legibles. Si añades o quitas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_init_project.md`.
 
 ### Principio rector de los `CLAUDE.md` downstream
 

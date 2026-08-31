@@ -167,9 +167,9 @@ chmod +x .claude/hooks/*.sh
 ### 2.2 Rellenar el perfil del proyecto
 
 Todos los valores que cambian de un proyecto a otro viven en **un único fichero**,
-[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Los ficheros `02..05_*.md`
-contienen solo convenciones y **no requieren relleno**: cuando necesitan un valor concreto, remiten
-al perfil.
+[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Los ficheros de contexto
+restantes (`02`, `04`, `05`) contienen solo convenciones y **no requieren relleno**: cuando necesitan
+un valor concreto, remiten al perfil.
 
 | Fichero | Descripción |
 | --- | --- |
@@ -206,7 +206,7 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `02..05_*.md` no llevan placeholders: son solo convenciones).
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `02`, `04` y `05` no llevan placeholders: son solo convenciones).
 - [ ] `.specify/memory/data-model.md` y `.specify/memory/schema-change-protocol.md` presentes
       (`db_ideas.md` es opcional y mantiene corchetes de plantilla a propósito, no cuenta para este
       punto).
@@ -243,6 +243,12 @@ Revisión adversarial de `spec.md`/`plan.md`/`tasks.md` en contexto limpio, con 
 
 ##### `critic-verifications`
 Audita el criterio de cierre antes de converger: qué tareas exigen UAT humana, cuáles se han cerrado sin evidencia objetiva, y si la clasificación `automatizable`/`manual` de `quickstart_agent.md` es correcta. No ejecuta ni escribe nada — esa es la frontera con `verify-validate`. Se usa en el paso 4.4. Se apoya en el subagente `spec-critic`.
+
+##### `dev-python-coding`
+Convenciones de escritura de código Python (gestión con `uv`, layout `src/`, tipado estático con genéricos built-in y PEP 695, Pydantic v2, ruff + `ty`, docstrings Google style, criterios de elección de framework). Lee la versión de Python y el framework del perfil del proyecto. Se carga en el paso 4.1, justo antes de `/speckit.implement`, y en cualquier edición de un `.py` fuera del ciclo. **Es una skill plana**: no forkea a ningún subagente, porque el código se escribe en el hilo principal, que es el que tiene `spec.md`/`plan.md`/`tasks.md` y el bucle de corrección del paso 4.3.
+
+##### `dev-python-testing`
+Convenciones de testing (pytest, `tests/` como espejo de `src/[paquete]/`, mockeo obligatorio de conexiones a BD y de todo lo externo, cobertura mínima del perfil) y la regla dura de que ningún endpoint o función de negocio se cierra en `tasks.md` sin al menos un test. Se carga junto a `dev-python-coding` en el paso 4.1, y es plana por el mismo motivo.
 
 ##### `db-schema-design`
 Encapsula las convenciones de [**04_base_datos.md**](./.claude/context/04_base_datos.md) (naming, campos de auditoría, política de índices) para que el asistente las aplique al diseñar cualquier tabla nueva sin tener que repetírselas cada vez. Válida tanto para PostgreSQL como para SQL Server.
@@ -326,10 +332,10 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | Ruta | Contenido |
 | --- | --- |
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de contexto que se rellena** — referenciado desde `CLAUDE.md` con `@` |
-| `.claude/context/02..04_*.md` | Convenciones de documentación, Python y base de datos — referenciadas desde `CLAUDE.md` con `@` |
+| `.claude/context/02_documentacion_mantenibilidad.md`, `04_base_datos.md` | Convenciones de documentación y de base de datos — referenciadas desde `CLAUDE.md` con `@`. Las de código Python ya no viven aquí: son las skills `dev-python-coding` y `dev-python-testing` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, Issues/Projects) — referenciado con `@` |
 | `.specify/memory/data-model.md`, `schema-change-protocol.md`, `db_ideas.md` | Modelo de datos canónico y protocolo de cambio de esquema que usan `/speckit.specify` y `/speckit.plan`; `db_ideas.md` (borrador humano de tablas concretas) solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente. Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
-| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
+| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
 | `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `db-designer`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |

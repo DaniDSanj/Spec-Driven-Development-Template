@@ -15,7 +15,7 @@ un prompt por paso, en este orden.
 | [1 — Especificación](#fase-1--especificación) | `constitution` · `critic-requirements` · `specify` · `clarify` |
 | [2 — Plan](#fase-2--plan) | `plan` · esquema de datos · `tasks` · `critic-plan` |
 | [3 — Preparación](#fase-3--preparación-de-la-ejecución) | `verify-prepare` · issues · rama de feature |
-| [4 — Implementación](#fase-4--implementación) | `implement` · migración · `verify-validate` · `critic-verifications` · UAT |
+| [4 — Implementación](#fase-4--implementación) | `dev-python-*` + `implement` · migración · `verify-validate` · `critic-verifications` · UAT |
 | [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · documentación · commit y PR |
 
 ---
@@ -278,10 +278,17 @@ git checkout -b feature/<id-speckit>-<slug> dev
 ### 4.1 — `/speckit.implement`
 
 ```
-/speckit.implement
+Carga las skills /dev-python-coding y /dev-python-testing, y a continuación ejecuta /speckit.implement.
 
-Implementa las tareas de esta feature siguiendo las convenciones de `@.claude/context/03_python.md`. Para cada tarea que toque una superficie de usuario o datos de producción, señala explícitamente que requiere UAT humana antes de marcarla como cerrada y describe qué debo probar exactamente.
+Implementa las tareas de esta feature aplicando esas convenciones. Para cada tarea que toque una superficie de usuario o datos de producción, señala explícitamente que requiere UAT humana antes de marcarla como cerrada y describe qué debo probar exactamente.
 ```
+
+Las dos skills se cargan **antes** de `/speckit.implement`, no dentro: `/speckit.implement` es un
+comando de Spec-Kit cuyo interior no controlamos, así que la única forma determinista de que escriba
+con las convenciones puestas es tenerlas ya en contexto cuando arranca. Son skills planas a propósito
+—no forkean a ningún subagente— porque el código se escribe en este mismo hilo, que es el que tiene
+`spec.md`, `plan.md`, `tasks.md` y el bucle de corrección del paso
+[4.3](#43--verify-validate-repite-tras-cada-corrección).
 
 **Siguiente:** [4.2](#42--si-la-feature-incluye-una-migración-aplicarla) si hay migración; si no, [4.3](#43--verify-validate-repite-tras-cada-corrección).
 

@@ -19,11 +19,9 @@
 
 ## 2. Docstrings y comentarios
 
-- Formato único en todo el proyecto: **Google style** (`Args:`, `Returns:`, `Raises:`). No mezclar con
-  NumPy style.
-- Toda función/clase/módulo público lleva docstring. Con type hints (PEP 484/695) activos, no repitas
-  el tipo dentro del docstring: descríbelo solo si aporta matiz que el tipo no capta.
-- Comentarios inline solo para explicar el "por qué", nunca el "qué" (el código ya dice el qué).
+Son convenciones de código, no de documentación de proyecto, y dependen del lenguaje: viven en la
+skill **`dev-python-coding`**, que se carga en el paso 4.1 del ciclo y en cualquier edición de un
+`.py`. No las repitas aquí — una sola fuente de verdad.
 
 ## 3. Trazabilidad spec → plan → tasks → commit
 

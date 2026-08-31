@@ -19,7 +19,6 @@ Vas a generar el fichero CLAUDE.md de la raíz de este proyecto.
 Antes de escribir nada, lee estos ficheros completos:
 - `@.claude/context/00_perfil_proyecto.md` — los datos concretos de este proyecto
 - `@.claude/context/02_documentacion_mantenibilidad.md`
-- `@.claude/context/03_python.md`
 - `@.claude/context/04_base_datos.md`
 - `@.claude/context/05_github.md`
 
@@ -63,13 +62,15 @@ llevar las convenciones cargadas de antemano.
 | Tomar requisitos antes de escribir una spec | `/critic-requirements` |
 | Revisar spec/plan/tasks antes de implementar | `/critic-plan` |
 | Auditar el criterio de cierre antes de converger | `/critic-verifications` |
+| Escribir o modificar código Python | `/dev-python-coding` |
+| Escribir o modificar tests | `/dev-python-testing` |
 
 Al terminar, muéstrame el CLAUDE.md generado y pregúntame si hay algún comando o convención local que
 se te haya escapado antes de darlo por definitivo.
 ```
 
 > Esta tabla de enrutado crece a medida que la plantilla migra el resto de `.claude/context/*.md` a
-> skills de dominio (`dev-*`, `db-*`, `docs-*`, `git-*`). Mientras un fichero de contexto siga
+> skills de dominio (`db-*`, `docs-*`, `git-*`). Mientras un fichero de contexto siga
 > existiendo, se sigue importando con `@`.
 
 ## Revisión final
