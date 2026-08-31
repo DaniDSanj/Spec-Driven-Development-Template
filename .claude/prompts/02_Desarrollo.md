@@ -71,15 +71,23 @@ Si reporta hallazgos, resuélvelos (vuelve a `specify`/`plan`/`tasks` según cor
 Antes de implementar, usa el subagente spec-critic para revisar spec.md, plan.md y tasks.md de esta feature. Si reporta un NO-GO, resuélvelo antes de continuar. Muéstrame el listado completo de hallazgos, no solo un resumen.
 ```
 
-## 8. `/speckit.taskstoissues` (features con más de ~5 tareas)
+## 8. `/verify-prepare` (solo si `spec-critic` dio GO en el paso anterior)
+
+```
+Ejecuta la skill /verify-prepare para la feature activa.
+```
+
+Traduce `specs/<feature>/quickstart.md` (generado en el paso 3) a `specs/<feature>/quickstart_agent.md`, clasificando cada escenario como `automatizable` o `manual`. Se ejecuta después del GO de `spec-critic` a propósito — traducir un `quickstart.md` que la crítica adversarial todavía podría hacer cambiar sería trabajo desechable. Si ya existía una versión previa de `quickstart_agent.md`, la fusión es idempotente: conserva el resultado de los escenarios sin cambios.
+
+## 9. `/speckit.taskstoissues` (features con más de ~5 tareas)
 
 ```
 /speckit.taskstoissues
 ```
 
-Ejecútalo **antes** de implementar, nunca después: es lo que da seguimiento en tiempo real a las tareas mientras se hacen, no un registro histórico de lo ya terminado. Si la feature es trivial y no genera issues (~5 tareas o menos), salta este paso y continúa en el 10 trabajando directamente sobre `dev`.
+Ejecútalo **antes** de implementar, nunca después: es lo que da seguimiento en tiempo real a las tareas mientras se hacen, no un registro histórico de lo ya terminado. Si la feature es trivial y no genera issues (~5 tareas o menos), salta este paso y continúa en el 11 trabajando directamente sobre `dev`.
 
-## 9. Crea la rama de feature (obligatoria si el paso anterior generó issues)
+## 10. Crea la rama de feature (obligatoria si el paso anterior generó issues)
 
 ```
 Crea la rama `feature/<id-speckit>-<slug>` a partir de `dev` y cámbiate a ella. Confírmame el nombre exacto de rama que has usado.
@@ -91,9 +99,9 @@ Referencia de lo que ejecutará el asistente (no lo lances tú a mano):
 git checkout -b feature/<id-speckit>-<slug> dev
 ```
 
-Si el paso 8 generó issues, esta rama es obligatoria — es lo que permite que el cierre de esos issues sea automático al mergear (ver `@.claude/context/05_github.md`). Si no hay issues asociados, este paso es opcional y puedes seguir trabajando sobre `dev`.
+Si el paso 9 generó issues, esta rama es obligatoria — es lo que permite que el cierre de esos issues sea automático al mergear (ver `@.claude/context/05_github.md`). Si no hay issues asociados, este paso es opcional y puedes seguir trabajando sobre `dev`.
 
-## 10. `/speckit.implement`
+## 11. `/speckit.implement`
 
 ```
 /speckit.implement
@@ -101,6 +109,14 @@ Si el paso 8 generó issues, esta rama es obligatoria — es lo que permite que 
 Implementa las tareas de esta feature. Para cada tarea que toque una superficie de usuario o datos de producción, señala explícitamente que requiere UAT humana antes de marcarla como cerrada (ver `@.claude/context/01_estilo_comportamiento.md` sección 3) y describe qué debo probar exactamente.
 ```
 
-En cuanto las tareas y su UAT queden validadas, si trabajaste sobre `feature/*`, propón activamente —como parte del cierre de esta tarea, no como ocurrencia tardía— abrir la PR hacia `dev` con `Closes #N` por cada issue que resuelve.
+## 12. `/verify-validate` (repite tras cada corrección)
+
+```
+Ejecuta la skill /verify-validate para la feature activa.
+```
+
+Ejecuta los escenarios `automatizable` de `quickstart_agent.md` y anota el resultado de cada uno (✅ REALIZADA / ❌ ERRÓNEA / ⏳ PENDIENTE / 🚫 INALCANZABLE) directamente en ese fichero, sin corregir nada por su cuenta. Si reporta `ERRÓNEA` o `INALCANZABLE`, corrige el código según lo anotado y repite este paso — no continúes a `03_Cierre.md` mientras queden puntos sin resolver de este tipo. Los escenarios `manual` quedan `PENDIENTE` a propósito: se confirman en el paso 2 de `03_Cierre.md`.
+
+En cuanto las tareas y su UAT (automática y manual) queden validadas, si trabajaste sobre `feature/*`, propón activamente —como parte del cierre de esta tarea, no como ocurrencia tardía— abrir la PR hacia `dev` con `Closes #N` por cada issue que resuelve.
 
 Continúa con [**03_Cierre.md**](./03_Cierre.md) una vez implementado y validado.

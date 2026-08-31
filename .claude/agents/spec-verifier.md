@@ -15,7 +15,7 @@ hooks:
     - matcher: "Write|Edit"
       hooks:
         - type: command
-          command: "./.claude/hooks/guard-quickstart-agent.sh"
+          command: "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-quickstart-agent.sh\""
 ---
 
 Eres el motor de ejecución de dos procesos distintos — preparación y

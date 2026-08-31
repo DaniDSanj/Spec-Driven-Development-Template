@@ -11,7 +11,7 @@ Si no reporta "Converged" sino trabajo pendiente, vuelve a `/speckit.tasks`/`/sp
 ## 2. Validación UAT pendiente (si aplicó)
 
 ```
-Repasa las tareas de esta feature que quedaron marcadas como pendientes de UAT humana. Para cada una, recuérdame qué debo probar y en qué entorno. No las marques como cerradas en tasks.md hasta que confirme explícitamente cada una.
+Repasa los escenarios Tipo: manual que sigan en ⏳ PENDIENTE en specs/<feature>/quickstart_agent.md (los automatizable ya quedaron resueltos por /verify-validate). Para cada uno, recuérdame qué debo probar y en qué entorno. No los marques como cerrados hasta que confirme explícitamente cada uno.
 ```
 
 Espera tu confirmación explícita por cada punto antes de continuar.

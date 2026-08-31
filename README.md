@@ -142,8 +142,8 @@ Al haber creado el repo con "Use this template", estas rutas ya existen — no h
 
 ```bash
 ls .claude/context/       # 01_estilo_comportamiento.md .. 05_github.md
-ls .claude/skills/        # adr-writer, db-schema-design, obsidian-sync
-ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, db-designer.md
+ls .claude/skills/        # adr-writer, db-schema-design, obsidian-sync, verify-prepare, verify-validate
+ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, db-designer.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
 ls .specify/memory/       # data-model.md, schema-change-protocol.md, db_ideas.md (+ constitution.md tras specify init)
 ls docs/                  # Specs/, ADR/records/, Data-Model/, Runbooks/, Changelog/, Meta/
@@ -240,7 +240,13 @@ Sabe el formato exacto de ADR, dónde vive (`docs/ADR/records/`), y aplica la re
 ##### `obsidian-sync`
 Sabe qué nota del vault actualizar tras cada evento de la tabla de disparo de [**02_documentacion_mantenibilidad.md**](./.claude/context/02_documentacion_mantenibilidad.md), y en qué formato (Dataview/wikilinks).
 
-Puedes añadir más según crezca el proyecto (ej. `fastapi-endpoint-scaffold`, `pytest-fixtures`), pero empieza solo con estas tres — más skills de las que realmente usas solo añaden ruido a la carga inicial.
+##### `verify-prepare`
+Traduce `specs/<feature>/quickstart.md` (prosa) a `specs/<feature>/quickstart_agent.md`, un formato estructurado que clasifica cada escenario como `automatizable` o `manual` y lo mapea a su `FR-XXX`/`US-X` de `spec.md`. Se usa tras el GO del subagente `spec-critic`, o cuando `quickstart.md` cambia y `quickstart_agent.md` queda desactualizado (fusión idempotente: conserva el resultado de los escenarios sin cambios). Se apoya en el subagente `spec-verifier`.
+
+##### `verify-validate`
+Ejecuta los escenarios `automatizable` de `quickstart_agent.md` de la feature activa y anota en ese mismo fichero el resultado de cada uno (✅ REALIZADA / ❌ ERRÓNEA / ⏳ PENDIENTE / 🚫 INALCANZABLE), con evidencia objetiva. Nunca corrige el proyecto ni edita otro fichero. Se usa tras `/speckit.implement`, y de nuevo tras cada corrección, hasta que no queden ERRÓNEAS ni INALCANZABLES. Se apoya en el subagente `spec-verifier`.
+
+Puedes añadir más según crezca el proyecto (ej. `fastapi-endpoint-scaffold`, `pytest-fixtures`), pero empieza solo con estas — más skills de las que realmente usas solo añaden ruido a la carga inicial.
 
 #### Subagentes
 
@@ -258,6 +264,9 @@ Tras `/speckit.converge`, redacta el ADR/Changelog/nota de vault correspondiente
 ##### `security-reviewer`
 Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/`.env`, migraciones, entradas no confiables) antes de `/speckit.converge`, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook `pre_edit_guard_sensitive.sh` (que bloquea la escritura) revisando la lógica una vez escrita.
 
+##### `spec-verifier`
+Motor de ejecución compartido por las skills `verify-prepare` y `verify-validate`. Nunca corrige código de producción, configuración ni tests, y nunca inventa un resultado sin evidencia objetiva; solo puede escribir `quickstart_agent.md` de la feature activa, restricción reforzada por el hook `guard-quickstart-agent.sh` (declarado en su propio frontmatter, no en `.claude/settings.json`, porque solo debe aplicar a sus escrituras, no a toda la sesión).
+
 #### Hooks
 
 Todos los hooks son solo **recomendaciones** para este stack en concreto y ya vienen incluidos en `.claude/settings.json` al crear el repo desde esta plantilla — no hay que instalarlos:
@@ -265,6 +274,7 @@ Todos los hooks son solo **recomendaciones** para este stack en concreto y ya vi
 1. **PostToolUse en `Edit`/`Write` sobre `*.py`** → `ruff format` + `ruff check --fix` + `ty check` automáticos.
 2. **Stop** → `uv run pytest -q`; si falla, Claude ve el resultado antes de dar la tarea por cerrada.
 3. **PreToolUse en `Write`/`Edit` sobre `migrations/**` o `.env*`** → bloquea la escritura (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). El humano decide manualmente si aplica el cambio por otra vía.
+4. **PreToolUse en `Write`/`Edit`, scopeado al subagente `spec-verifier`** (declarado en `.claude/agents/spec-verifier.md`, no en la lista de arriba) → bloquea cualquier escritura suya que no sea `quickstart_agent.md` de la feature activa.
 
 En sistemas Unix, verifica que son ejecutables (Windows no lo necesita): `chmod +x .claude/hooks/*.sh`.
 
@@ -305,9 +315,9 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | `.claude/context/01..04_*.md` | Convenciones de estilo, documentación, Python y base de datos — referenciadas desde `CLAUDE.md` con `@` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, Issues/Projects) — referenciado con `@` |
 | `.specify/memory/data-model.md`, `schema-change-protocol.md`, `db_ideas.md` | Modelo de datos canónico y protocolo de cambio de esquema que usan `/speckit.specify` y `/speckit.plan`; `db_ideas.md` (borrador humano de tablas concretas) solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente. Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
-| `.claude/skills/*` | Skills recomendadas (`db-schema-design`, `adr-writer`, `obsidian-sync`) |
-| `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `db-designer`, `docs-updater`, `security-reviewer`) |
-| `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles) |
+| `.claude/skills/*` | Skills recomendadas (`db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
+| `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `db-designer`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
+| `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_ClaudeMD.md` (generación única del `CLAUDE.md` real), `02_Desarrollo.md`, `03_Cierre.md`, `04_Mantenimiento.md` |
 | `docs/` | Esqueleto del vault de Obsidian (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/` con las guías de setup/workflow y las plantillas de nota) |
 | `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), gateado por la existencia de `pyproject.toml` |

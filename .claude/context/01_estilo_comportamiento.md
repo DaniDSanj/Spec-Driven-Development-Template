@@ -48,6 +48,10 @@
 - Para el resto de tareas (backend puro, scripts, utilidades internas sin superficie de usuario), la
   validación automática sí es suficiente para cerrar, siempre que `/speckit.analyze` no haya reportado
   hallazgos pendientes.
+- Dentro de la UAT, distingue el subconjunto de escenarios que `quickstart_agent.md` clasifica como
+  `automatizable`: esos se validan mecánicamente con la skill `verify-validate` (ver
+  `@.claude/agents/spec-verifier.md`), no con confirmación humana. La regla de no cerrar sin
+  confirmación explícita del humano sigue aplicando sin excepción a los escenarios `manual`.
 
 ## Resumen operativo
 
@@ -55,4 +59,4 @@
 |---|---|
 | Antes de `specify` | Pregunta, no asumas. Cobertura de las 10 categorías de ambigüedad. |
 | Antes de `implement` | Crítica adversarial explícita (spec-critic). Veto ante objeción fatal. |
-| Antes de `converge` | UAT humana obligatoria en todo lo user-facing / datos / negocio. |
+| Antes de `converge` | Escenarios `automatizable` en verde vía `verify-validate`; escenarios `manual` con UAT humana confirmada explícitamente. |
