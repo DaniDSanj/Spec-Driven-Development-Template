@@ -67,7 +67,8 @@ Closes #47, Closes #48, Closes #49, Closes #50
 | Recomendación | Úsalo si el código no contiene datos/lógica sensible | Necesario si hay credenciales, lógica de negocio propietaria o requisito de confidencialidad |
 | Multiplicador de minutos por OS | Linux 1x · Windows 2x · macOS 10x (aplica igual en ambos casos) | ídem |
 
-Este proyecto es: `[público / privado — indicar]`. Si es privado y el consumo de Actions se acerca a
+Cuál es este proyecto: ver **GitHub → Visibilidad del repositorio** en
+`@.claude/context/00_perfil_proyecto.md`. Si es privado y el consumo de Actions se acerca a
 2.000 min/mes: reduce la matriz de sistemas operativos a solo Linux, activa caché de dependencias
 (`actions/cache` o el cache nativo de `uv`), y agrupa jobs redundantes.
 

@@ -1,34 +1,25 @@
 # Diseño de base de datos
 
 > Importado desde `CLAUDE.md` con `@.claude/context/04_base_datos.md`.
-> Rellena `[ ]` con los valores reales del proyecto. Si un proyecto usa SQL Server en vez de
-> PostgreSQL, marca la casilla correspondiente: la mayoría de reglas son comunes, las diferencias
-> están señaladas explícitamente.
->
-> **Si algún campo de este fichero sigue sin rellenar** al usarlo en un proyecto: los campos con
-> default declarado (motor → PostgreSQL, PK → `id`, schemas → sin usar) se aplican tal cual y se
-> mencionan en la respuesta; los campos sin default seguro porque dependen del stack del proyecto
-> (p. ej. la herramienta de migraciones) deben preguntarse al usuario antes de generar o proponer
-> nada relacionado — nunca asumirlos en silencio.
+> Contiene solo **convenciones**, comunes a PostgreSQL y SQL Server salvo donde se señala la
+> diferencia explícitamente. Los valores concretos de este proyecto (motor y versión, convención de
+> PK, uso de schemas, herramienta de migraciones) están en `@.claude/context/00_perfil_proyecto.md`
+> — consúltalo allí y aplica su regla de campos sin rellenar.
 
 ## Motor
 
-- [ ] PostgreSQL `[versión]` — **motor por defecto**, úsalo salvo que el punto siguiente aplique.
-- [ ] SQL Server `[versión]` — usar cuando `[justificar: integración con stack Microsoft existente,
-      requisito del cliente, etc.]`.
+Cuál usa este proyecto: ver **Base de datos → Motor** en `@.claude/context/00_perfil_proyecto.md`.
+PostgreSQL es el motor por defecto; SQL Server solo con justificación.
 
 ## Convenciones de nombres
 
 - Tablas: plural, `snake_case` → `users`, `order_items`.
 - Columnas: singular, `snake_case` → `first_name`, `created_at`.
-- Clave primaria:
-  - [ ] `id` — **por defecto**, úsalo salvo que el punto siguiente aplique.
-  - [ ] `[tabla]_id` — usar cuando `[justificar: explicitud en joins con varias FK a la misma
-        tabla, convención ya existente en el proyecto, etc.]`.
+- Clave primaria: ver **Base de datos → Convención de clave primaria** en
+  `@.claude/context/00_perfil_proyecto.md` (`id` por defecto).
 - Clave foránea: `[tabla_referenciada_singular]_id` → `user_id`, `order_id`. Siempre indexada.
-- [ ] Usar schemas (PostgreSQL) para namespacing por dominio — **por defecto: no** (todo en el
-      schema por defecto, p. ej. `public`). Si se marca, ejemplo: `[ej. auth.users,
-      billing.invoices]`.
+- Schemas (PostgreSQL) para namespacing por dominio: ver **Base de datos → Uso de schemas** en
+  `@.claude/context/00_perfil_proyecto.md` (por defecto no se usan).
 
 ## Campos de auditoría (obligatorios en toda tabla transaccional)
 
@@ -103,11 +94,11 @@ humano.
 
 ## Migraciones
 
-- Herramienta: `[nombre de la herramienta del proyecto — p. ej. Alembic, Flyway, Liquibase, EF Core
-  Migrations]`. Si este campo sigue sin rellenar, pregunta al usuario qué herramienta usa el
-  proyecto antes de generar o proponer una migración — no asumas ninguna por defecto, depende del
-  stack (lenguaje/framework) del proyecto. Toda migración se genera, se revisa a mano y se versiona
-  en Git; nunca se aplican cambios de esquema directamente en la BD sin migración.
+- Herramienta: ver **Base de datos → Herramienta de migraciones** en
+  `@.claude/context/00_perfil_proyecto.md`. Es un campo **sin default seguro**: si sigue sin
+  rellenar, pregunta al usuario qué herramienta usa el proyecto antes de generar o proponer una
+  migración. Toda migración se genera, se revisa a mano y se versiona en Git; nunca se aplican
+  cambios de esquema directamente en la BD sin migración.
 - Toda migración que afecte a datos ya existentes en producción requiere UAT humana explícita (ver
   `@.claude/context/01_estilo_comportamiento.md`) antes de aplicarse.
 

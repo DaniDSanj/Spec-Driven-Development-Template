@@ -29,8 +29,8 @@ Este repositorio es una **GitHub Template Repository**: no se clona ni se copia 
 0. Crea el repositorio del proyecto desde esta plantilla: botón **"Use this template"** en la página de este repo en GitHub, o `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`. Clónalo localmente si no usaste `--clone`.
 1. Ejecuta `specify init` en el repo ya creado siguiendo la sección [**Instalación de Spec-Kit**](#1-instalación-de-spec-kit).
 2. Configura el *harness* del proyecto con la sección [**Configuración del harness**](#2-configuración-del-harness-una-vez-por-proyecto).
-3. Cada vez que abras una feature/spec nueva usa los prompts de [**02_Desarrollo**](./.claude/prompts/02_Desarrollo.md) y [**03_Cierre**](./.claude/prompts/03_Cierre.md).
-4. Cuando el proyecto lleve tiempo cerrado y vuelvas a él, usa [**04_Mantenimiento**](./.claude/prompts/04_Mantenimiento.md) para retomarlo y abrir nuevos desarrollos.
+3. Cada vez que abras una feature/spec nueva sigue [**02_spec_development**](./.claude/prompts/02_spec_development.md) de arriba abajo: cubre el ciclo completo de la petición al merge (specify → plan → tasks → implementación → UAT → documentación → PR).
+4. Cuando el proyecto lleve tiempo cerrado y vuelvas a él, entra por la **Fase 0 (Encuadre)** de ese mismo documento: reconstruye el contexto y clasifica la petición (corrección / mejora pequeña / funcionalidad nueva), y la clasificación te dice qué fases posteriores aplican.
 
 > **Atajo automatizado**: los pasos 1 y 2 (incluyendo gran parte de lo que documenta la sección
 > [Instalación de skills, subagentes y hooks](#instalación-de-skills-subagentes-y-hooks), referenciada
@@ -141,7 +141,7 @@ Sigue paso a paso esta sección una vez que hayas creado el repositorio desde la
 Al haber creado el repo con "Use this template", estas rutas ya existen — no hay nada que copiar:
 
 ```bash
-ls .claude/context/       # 01_estilo_comportamiento.md .. 05_github.md
+ls .claude/context/       # 00_perfil_proyecto.md + 01_estilo_comportamiento.md .. 05_github.md
 ls .claude/skills/        # adr-writer, db-schema-design, obsidian-sync, verify-prepare, verify-validate
 ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, db-designer.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
@@ -164,24 +164,28 @@ En sistemas Unix, asegúrate de que los hooks son ejecutables (Windows no lo nec
 chmod +x .claude/hooks/*.sh
 ```
 
-### 2.2 Rellenar los placeholders con los datos reales del proyecto
+### 2.2 Rellenar el perfil del proyecto
 
-Ve rellenando manualmente los campos `[ ]` de cada fichero con los datos reales del proyecto:
+Todos los valores que cambian de un proyecto a otro viven en **un único fichero**,
+[**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Los ficheros `01..05_*.md`
+contienen solo convenciones y **no requieren relleno**: cuando necesitan un valor concreto, remiten
+al perfil.
 
 | Fichero | Descripción |
 | --- | --- |
-| [**01_estilo_comportamiento.md**](./.claude/context/01_estilo_comportamiento.md) | Normalmente no requiere cambios, son reglas de comportamiento genéricas y ya aplicables tal cual. |
-| [**02_documentacion_mantenibilidad.md**](./.claude/context/02_documentacion_mantenibilidad.md) | Normalmente tampoco requiere cambios. |
-| [**03_python.md**](./.claude/context/03_python.md) | Rellena versión de Python, framework backend/móvil, criterios de cobertura. |
-| [**04_base_datos.md**](./.claude/context/04_base_datos.md) | Rellena motor (PostgreSQL/SQL Server), schemas, decisión sobre NoSQL si aplica. |
-| [**05_github.md**](./.claude/context/05_github.md) | Rellena [público/privado] y confirma el nombre de la rama de trabajo (dev por defecto). |
+| [**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md) | **El único que se rellena.** Nombre y descripción del proyecto, comandos no obvios, versión de Python, framework, cobertura objetivo, motor de BD y versión, convención de PK, uso de schemas, herramienta de migraciones, visibilidad del repo. `bootstrap.ps1` rellena la parte mecánica; el resto se completa a mano. |
 | [**.specify/memory/data-model.md**](./.specify/memory/data-model.md) | Modelo de datos canónico del proyecto (entidades, changelog, qué specs dependen de cada tabla). Arranca con el ejemplo de la plantilla; sustitúyelo por las tablas reales a medida que se creen, o vacíalo si el proyecto aún no tiene ninguna. |
+
+Cada campo del perfil declara si tiene *default* o no. Los que tienen default se aplican solos y el
+asistente te lo menciona; los que **no** lo tienen (herramienta de migraciones, framework, cobertura
+objetivo, versión del motor) el asistente te los preguntará antes de generar nada que dependa de
+ellos, en vez de asumirlos en silencio.
 
 `schema-change-protocol.md` y `db_ideas.md` no requieren relleno inicial: el primero es el protocolo obligatorio que `/speckit.specify` y `/speckit.plan` invocan antes de crear o modificar cualquier estructura; el segundo es un borrador humano de tablas concretas que solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente (ver [Estructura de la plantilla](#estructura-de-la-plantilla)).
 
 ### 2.3 Generar CLAUDE.md
 
-Abre `claude` dentro del proyecto y pega el prompt de [**01_ClaudeMD**](./.claude/prompts/01_ClaudeMD.md), ya con sus placeholders rellenos. Esto **sobrescribe** el `CLAUDE.md` que trae la plantilla (meta-instrucciones para editar la propia plantilla) con el `CLAUDE.md` real del proyecto — es intencionado. Revisa el resultado a mano antes de continuar.
+Abre `claude` dentro del proyecto y pega el prompt de [**01_init_project**](./.claude/prompts/01_init_project.md) tal cual — no tiene placeholders que rellenar: lee los datos del proyecto de `00_perfil_proyecto.md`. Esto **sobrescribe** el `CLAUDE.md` que trae la plantilla (meta-instrucciones para editar la propia plantilla) con el `CLAUDE.md` real del proyecto — es intencionado. Revisa el resultado a mano antes de continuar.
 
 ### 2.4 Configurar Obsidian
 
@@ -202,7 +206,7 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/01_*.md` a `05_github.md` sin placeholders `[ ]` pendientes.
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `01..05_*.md` no llevan placeholders: son solo convenciones).
 - [ ] `.specify/memory/data-model.md` y `.specify/memory/schema-change-protocol.md` presentes
       (`db_ideas.md` es opcional y mantiene corchetes de plantilla a propósito, no cuenta para este
       punto).
@@ -210,7 +214,7 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 - [ ] Vault de Obsidian con los plugins comunitarios instalados.
 - [ ] Repo GitHub con rama `dev`, CI y branch protection configurados.
 
-Con esto, el harness está listo y puedes empezar el primer ciclo SDD con [**02_Desarrollo**](./.claude/prompts/02_Desarrollo.md).
+Con esto, el harness está listo y puedes empezar el primer ciclo SDD con [**02_spec_development**](./.claude/prompts/02_spec_development.md) (proyecto nuevo: entra directamente por el paso 1.0 y sáltate la Fase 0).
 
 ## Instalación de skills, subagentes y hooks
 
@@ -312,13 +316,14 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 
 | Ruta | Contenido |
 | --- | --- |
+| `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de contexto que se rellena** — referenciado desde `CLAUDE.md` con `@` |
 | `.claude/context/01..04_*.md` | Convenciones de estilo, documentación, Python y base de datos — referenciadas desde `CLAUDE.md` con `@` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, Issues/Projects) — referenciado con `@` |
 | `.specify/memory/data-model.md`, `schema-change-protocol.md`, `db_ideas.md` | Modelo de datos canónico y protocolo de cambio de esquema que usan `/speckit.specify` y `/speckit.plan`; `db_ideas.md` (borrador humano de tablas concretas) solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente. Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
 | `.claude/skills/*` | Skills recomendadas (`db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
 | `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `db-designer`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
-| `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_ClaudeMD.md` (generación única del `CLAUDE.md` real), `02_Desarrollo.md`, `03_Cierre.md`, `04_Mantenimiento.md` |
+| `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
 | `docs/` | Esqueleto del vault de Obsidian (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/` con las guías de setup/workflow y las plantillas de nota) |
 | `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), gateado por la existencia de `pyproject.toml` |
 

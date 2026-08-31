@@ -1,13 +1,13 @@
 # Convenciones de desarrollo en Python
 
 > Importado desde `CLAUDE.md` con `@.claude/context/03_python.md`.
-> Rellena los campos entre `[ ]` con los valores reales del proyecto antes de empezar a codificar; si
-> no se rellenan, el asistente debe usar los valores por defecto indicados entre paréntesis.
+> Contiene solo **convenciones**, iguales en todos los proyectos con este stack. Los valores concretos
+> de este proyecto (versión de Python, framework, cobertura objetivo) están en
+> `@.claude/context/00_perfil_proyecto.md` — consúltalo allí y aplica su regla de campos sin rellenar.
 
 ## Versión y entorno
 
-- Versión de Python: `[3.14.7]` (recomendado: la última estable en https://www.python.org/downloads/ en
-  el momento de iniciar el proyecto).
+- Versión de Python: ver **Python → Versión** en `@.claude/context/00_perfil_proyecto.md`.
 - Gestor de paquetes y entornos: **uv** — no usar pip/venv/poetry salvo justificación explícita.
 - Layout de proyecto: **src layout** (PEP 621), obligatorio salvo scripts de un solo fichero:
 
@@ -48,20 +48,21 @@
 
 ## Framework según tipo de proyecto
 
-Marca cuál aplica a este proyecto (puede haber más de uno si hay backend + móvil):
+Cuál aplica a este proyecto: ver **Python → Tipo de proyecto y framework** en
+`@.claude/context/00_perfil_proyecto.md`. Criterios para elegir, si aún está sin decidir:
 
-- [ ] **Backend / API web** → `[FastAPI]` (por defecto) o `[Django]` si el proyecto necesita admin
-      panel, ORM integrado y escala "enterprise" desde el inicio.
-- [ ] **Frontend web** → `[especificar: React vía API separada / Django templates / otro]`
-- [ ] **Aplicación móvil en Python** → elegir una:
-  - `[BeeWare / Toga+Briefcase]`: UI nativa por plataforma, mejor si se necesita look&feel nativo real.
-  - `[Kivy]`: UI custom vía OpenGL, mejor para apps gráficas/juegos o UI muy a medida.
-  - `[Flet]`: envuelve Flutter, builds más ligeros y curva de entrada más rápida si la UI es sencilla.
+- **Backend / API web** → **FastAPI** por defecto; **Django** si el proyecto necesita admin panel,
+  ORM integrado y escala "enterprise" desde el inicio.
+- **Frontend web** → React vía API separada, o Django templates.
+- **Aplicación móvil en Python** → **BeeWare / Toga+Briefcase** si se necesita look&feel nativo real;
+  **Kivy** (UI custom vía OpenGL) para apps gráficas/juegos o UI muy a medida; **Flet** (envuelve
+  Flutter) para builds más ligeros y curva de entrada rápida si la UI es sencilla.
 
 ## Testing
 
 - Framework: `pytest`. Estructura de tests en `tests/` reflejando `src/[paquete]/`.
-- Cobertura mínima objetivo: `[definir, ej. 80% en módulos de negocio]`.
+- Cobertura mínima objetivo: ver **Python → Cobertura mínima objetivo** en
+  `@.claude/context/00_perfil_proyecto.md`.
 - Todo endpoint/función de negocio nuevo requiere al menos un test antes de que la tarea se marque
   como cerrada en `tasks.md` (coherente con la regla de validación de `01_estilo_comportamiento.md`).
 

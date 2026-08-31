@@ -8,36 +8,36 @@
   El repositorio ya nace con todo el harness en su sitio (.claude/context, .claude/skills,
   .claude/agents, .claude/hooks, .specify/memory, docs/, .github/workflows/ci.yml) porque se generó
   con "Use this template" / `gh repo create --template`. Este script solo se encarga de lo que
-  todavía depende del proyecto concreto: ejecutar `specify init`, rellenar los placeholders mecánicos
-  (versión de Python, motor de BD, visibilidad), dejar listo el prompt de CLAUDE.md, y — si se pide —
-  completar la parte de GitHub que un repo recién generado desde plantilla aún no tiene (rama dev,
-  branch protection, GitHub Project).
+  todavía depende del proyecto concreto: ejecutar `specify init`, rellenar el perfil del proyecto
+  (.claude/context/00_perfil_proyecto.md: nombre, descripción, versión de Python, motor de BD,
+  visibilidad) y — si se pide — completar la parte de GitHub que un repo recién generado desde
+  plantilla aún no tiene (rama dev, branch protection, GitHub Project).
 
-  Lo que la metodología exige que decida o revise un humano queda fuera a propósito: rellenar
-  convenciones que dependen del stack (motor de migraciones, convención de PK, uso de schemas),
-  generar y revisar CLAUDE.md, instalar plugins de Obsidian, crear el GitHub Project y fijar el
-  spending limit. El script deja todo eso listado en un checklist final.
+  Lo que la metodología exige que decida o revise un humano queda fuera a propósito: los campos del
+  perfil sin default seguro (herramienta de migraciones, framework, cobertura objetivo, versión del
+  motor), generar y revisar CLAUDE.md, instalar plugins de Obsidian, crear el GitHub Project y fijar
+  el spending limit. El script deja todo eso listado en un checklist final.
 
 .PARAMETER ProjectName
-  Nombre del proyecto: rellena [NOMBRE_PROYECTO] en el prompt de CLAUDE.md. Si se usa -SetupGitHub,
+  Nombre del proyecto: rellena [NOMBRE_PROYECTO] en el perfil del proyecto. Si se usa -SetupGitHub,
   se usa también para nombrar el GitHub Project.
 
 .PARAMETER ProjectDescription
-  Descripción de una línea del proyecto: rellena [DESCRIPCIÓN_UNA_LÍNEA].
+  Descripción de una línea del proyecto: rellena [DESCRIPCIÓN_UNA_LÍNEA] en el perfil del proyecto.
 
 .PARAMETER NonObviousCommands
-  Comandos no evidentes (ej. cómo levantar la BD local). Rellena [COMANDOS_NO_OBVIOS]. Si se omite,
-  se deja marcado como pendiente de completar a mano.
+  Comandos no evidentes (ej. cómo levantar la BD local). Rellena [COMANDOS_NO_OBVIOS] en el perfil
+  del proyecto. Si se omite, se deja marcado como pendiente de completar a mano.
 
 .PARAMETER PythonVersion
-  Versión de Python a fijar en .claude/context/03_python.md (por defecto 3.12).
+  Versión de Python a fijar en el perfil del proyecto (por defecto 3.12).
 
 .PARAMETER DbEngine
-  Motor de base de datos: PostgreSQL, SQLServer o Ninguno. Marca la casilla correspondiente en
-  .claude/context/04_base_datos.md (por defecto PostgreSQL, que ya es el default documentado).
+  Motor de base de datos: PostgreSQL, SQLServer o Ninguno. Se fija en el perfil del proyecto (por
+  defecto PostgreSQL, que ya es el default documentado).
 
 .PARAMETER Visibility
-  Visibilidad del repositorio: private o public. Rellena .claude/context/05_github.md y, si se usa
+  Visibilidad del repositorio: private o public. Se fija en el perfil del proyecto y, si se usa
   -SetupGitHub, decide el flag de `gh api` para branch protection.
 
 .PARAMETER SpecifyScriptType
@@ -58,9 +58,10 @@
   por naturaleza (login por navegador): si tras instalar `gh` no está autenticado, el script se detiene
   con instrucciones en vez de continuar.
 
-.PARAMETER Force
-  Sobrescribe ficheros ya modificados a mano. Sin este flag, el script nunca pisa nada que ya
-  parezca personalizado — es seguro volver a ejecutarlo sobre un proyecto ya iniciado.
+.NOTES
+  El script es idempotente por construcción: solo sustituye placeholders literales del perfil del
+  proyecto, así que un campo ya personalizado a mano nunca se pisa al volver a ejecutarlo. Por eso
+  ya no existe un parámetro -Force.
 
 .EXAMPLE
   # Dentro del repo ya clonado (creado con "Use this template" o `gh repo create --template`):
@@ -98,9 +99,7 @@ param(
 
     [switch]$SetupGitHub,
 
-    [switch]$InstallGh,
-
-    [switch]$Force
+    [switch]$InstallGh
 )
 
 $ErrorActionPreference = 'Stop'
@@ -268,87 +267,78 @@ if (Test-Path -LiteralPath (Join-Path $ProjectPath '.specify\memory\constitution
 }
 
 # ---------------------------------------------------------------------------
-# Paso 2 — Placeholders mecánicos en .claude/context
+# Paso 2 — Perfil del proyecto
 # ---------------------------------------------------------------------------
 
-Write-Section 'Paso 2: placeholders en .claude/context'
+Write-Section 'Paso 2: perfil del proyecto'
 
 $contextDest = Join-Path $ProjectPath '.claude\context'
+$profilePath = Join-Path $contextDest '00_perfil_proyecto.md'
 
-$pythonCtxPath = Join-Path $contextDest '03_python.md'
-if (Test-Path -LiteralPath $pythonCtxPath) {
-    $content = Get-Content -LiteralPath $pythonCtxPath -Raw -Encoding UTF8
-    $newContent = $content.Replace('[3.14.7]', $PythonVersion)
-    if ($newContent -ne $content) {
-        Set-Content -LiteralPath $pythonCtxPath -Value $newContent -NoNewline -Encoding UTF8
-        Write-Ok "versión de Python fijada a $PythonVersion en 03_python.md"
-    } else {
-        Write-Skip '03_python.md: placeholder de versión ya no está presente (¿ya se rellenó?)'
-    }
-}
-Add-ManualStep 'Completar en .claude/context/03_python.md: framework del proyecto (backend/frontend/móvil) y cobertura mínima de tests'
+if (-not (Test-Path -LiteralPath $profilePath)) {
+    Write-Warn2 'no se encuentra .claude/context/00_perfil_proyecto.md; el repo no se generó desde una versión actual de la plantilla'
+    Add-ManualStep 'Crear a mano .claude/context/00_perfil_proyecto.md con los datos del proyecto'
+} else {
+    $content = Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8
 
-$dbCtxPath = Join-Path $contextDest '04_base_datos.md'
-if (Test-Path -LiteralPath $dbCtxPath) {
-    $content = Get-Content -LiteralPath $dbCtxPath -Raw -Encoding UTF8
-    $newContent = $content.Replace('- [x] PostgreSQL `[versión]`', '- [ ] PostgreSQL `[versión]`').Replace('- [x] SQL Server `[versión]`', '- [ ] SQL Server `[versión]`')
-    if ($DbEngine -eq 'PostgreSQL') {
-        $newContent = $newContent.Replace('- [ ] PostgreSQL `[versión]`', '- [x] PostgreSQL `[versión]`')
-    } elseif ($DbEngine -eq 'SQLServer') {
-        $newContent = $newContent.Replace('- [ ] SQL Server `[versión]`', '- [x] SQL Server `[versión]`')
+    $nonObvious = $NonObviousCommands
+    if ([string]::IsNullOrWhiteSpace($nonObvious)) {
+        $nonObvious = '[PENDIENTE - completar a mano]'
     }
-    if ($newContent -ne $content) {
-        Set-Content -LiteralPath $dbCtxPath -Value $newContent -NoNewline -Encoding UTF8
-        Write-Ok "motor de base de datos marcado ($DbEngine) en 04_base_datos.md"
-    }
-}
-Add-ManualStep 'Completar en .claude/context/04_base_datos.md: versión del motor, convención de PK, uso de schemas y herramienta de migraciones'
 
-$githubDest = Join-Path $contextDest '05_github.md'
-if (Test-Path -LiteralPath $githubDest) {
-    $content = Get-Content -LiteralPath $githubDest -Raw -Encoding UTF8
     $visibilityEs = 'privado'
     if ($Visibility -eq 'public') { $visibilityEs = 'público' }
-    $find = 'Este proyecto es: `[público / privado ' + [char]0x2014 + ' indicar]`.'
-    $replace = 'Este proyecto es: `' + $visibilityEs + '`.'
-    $newContent = $content.Replace($find, $replace)
+
+    $engineEs = $DbEngine
+    if ($DbEngine -eq 'SQLServer') { $engineEs = 'SQL Server' }
+
+    # Cada entrada: placeholder literal del fichero -> valor a escribir.
+    $descPlaceholder = '[DESCRIPCI' + [char]0x00D3 + 'N_UNA_L' + [char]0x00CD + 'NEA]'
+    $replacements = [ordered]@{
+        '[NOMBRE_PROYECTO]'     = $ProjectName
+        $descPlaceholder        = $ProjectDescription
+        '[COMANDOS_NO_OBVIOS]'  = $nonObvious
+        '[3.14.7]'              = $PythonVersion
+        '[PostgreSQL]'          = $engineEs
+        '[privado]'             = $visibilityEs
+    }
+
+    $newContent = $content
+    $applied = New-Object System.Collections.Generic.List[string]
+    $missing = New-Object System.Collections.Generic.List[string]
+    foreach ($key in $replacements.Keys) {
+        if ($newContent.Contains($key)) {
+            $newContent = $newContent.Replace($key, $replacements[$key])
+            $applied.Add("$key -> $($replacements[$key])") | Out-Null
+        } else {
+            $missing.Add($key) | Out-Null
+        }
+    }
+
     if ($newContent -ne $content) {
-        Set-Content -LiteralPath $githubDest -Value $newContent -NoNewline -Encoding UTF8
-        Write-Ok "visibilidad ($visibilityEs) fijada en 05_github.md"
-    } elseif ($content.Contains($replace)) {
-        Write-Skip "visibilidad ya estaba fijada en 05_github.md"
-    } else {
-        Write-Warn2 'no se pudo localizar el placeholder de visibilidad en 05_github.md; revísalo a mano'
+        Set-Content -LiteralPath $profilePath -Value $newContent -NoNewline -Encoding UTF8
+        foreach ($a in $applied) { Write-Ok $a }
+    }
+    if ($missing.Count -gt 0) {
+        Write-Skip "placeholders ya rellenos o ausentes: $($missing -join ', ')"
     }
 }
 
+Add-ManualStep 'Completar en .claude/context/00_perfil_proyecto.md los campos sin default: framework del proyecto, cobertura mínima de tests, versión del motor de BD y herramienta de migraciones'
+
 # ---------------------------------------------------------------------------
-# Paso 3 — Prompt de CLAUDE.md
+# Paso 3 — Generación de CLAUDE.md
 # ---------------------------------------------------------------------------
 
-Write-Section 'Paso 3: prompt de CLAUDE.md'
+Write-Section 'Paso 3: generación de CLAUDE.md'
 
-$claudeMdPromptSrc = Join-Path $ProjectPath '.claude\prompts\01_ClaudeMD.md'
-$promptContent = Get-Content -LiteralPath $claudeMdPromptSrc -Raw -Encoding UTF8
-
-$nonObvious = $NonObviousCommands
-if ([string]::IsNullOrWhiteSpace($nonObvious)) {
-    $nonObvious = '[PENDIENTE - completar a mano]'
-}
-
-$promptContent = $promptContent.Replace('[NOMBRE_PROYECTO]', $ProjectName)
-$promptContent = $promptContent.Replace('[COMANDOS_NO_OBVIOS]', $nonObvious)
-$descPlaceholder = '[DESCRIPCI' + [char]0x00D3 + 'N_UNA_L' + [char]0x00CD + 'NEA]'
-$promptContent = $promptContent.Replace($descPlaceholder, $ProjectDescription)
-
-$stagingPromptPath = Join-Path $ProjectPath '.claude\CLAUDE_MD_PROMPT.md'
-if ((Test-Path -LiteralPath $stagingPromptPath) -and (-not $Force)) {
-    Write-Skip $stagingPromptPath
+$claudeMdPromptSrc = Join-Path $ProjectPath '.claude\prompts\01_init_project.md'
+if (Test-Path -LiteralPath $claudeMdPromptSrc) {
+    Write-Ok 'prompt disponible en .claude/prompts/01_init_project.md (sin placeholders: lee los datos del perfil)'
 } else {
-    Set-Content -LiteralPath $stagingPromptPath -Value $promptContent -NoNewline -Encoding UTF8
-    Write-Ok $stagingPromptPath
+    Write-Warn2 'no se encuentra .claude/prompts/01_init_project.md'
 }
-Add-ManualStep 'Abrir `claude` dentro del proyecto, pegar el bloque de prompt de .claude/CLAUDE_MD_PROMPT.md y revisar el CLAUDE.md generado (sobrescribe el CLAUDE.md de la plantilla) antes de darlo por bueno'
+Add-ManualStep 'Abrir `claude` dentro del proyecto, pegar el bloque de prompt de .claude/prompts/01_init_project.md y revisar el CLAUDE.md generado (sobrescribe el CLAUDE.md de la plantilla) antes de darlo por bueno'
 
 # ---------------------------------------------------------------------------
 # Paso 4 — Obsidian
@@ -455,8 +445,7 @@ Write-Section 'Checklist final'
 
 Write-Host 'Automatizado por el script:' -ForegroundColor Green
 Write-Host '  - specify init (.specify/memory/constitution.md)'
-Write-Host '  - placeholders en .claude/context/03_python.md, 04_base_datos.md, 05_github.md'
-Write-Host '  - .claude/CLAUDE_MD_PROMPT.md (prompt ya relleno, listo para pegar en claude)'
+Write-Host '  - datos del proyecto en .claude/context/00_perfil_proyecto.md'
 if ($SetupGitHub) {
     Write-Host '  - rama dev y (best-effort) branch protection / GitHub Project'
 }

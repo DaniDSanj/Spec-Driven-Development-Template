@@ -45,21 +45,24 @@ A diferencia de un flujo de copia entre repos, estas rutas viven ya en la raíz 
 
 | Ruta | Contenido |
 |---|---|
+| `.claude/context/00_perfil_proyecto.md` | Los valores concretos de cada proyecto (nombre, versión de Python, motor de BD, herramienta de migraciones, visibilidad…). Único fichero de contexto que un proyecto downstream rellena; lo rellena `bootstrap.ps1` y se completa a mano |
 | `.claude/context/01_estilo_comportamiento.md` … `04_base_datos.md` | Importados en el `CLAUDE.md` del proyecto vía `@` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub, importado igual con `@` |
 | `.claude/skills/*` | Skills recomendadas (a nivel de proyecto; `~/.claude/skills/*` es la alternativa global — gana el de proyecto en caso de colisión de nombre) |
 | `.claude/agents/*` | Subagentes recomendados |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados |
 | `docs/` | El esqueleto del vault de Obsidian del proyecto (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/`) |
-| `.claude/prompts/*` | La biblioteca de prompts maestros del proyecto (`01_ClaudeMD.md`, `02_Desarrollo.md`, `03_Cierre.md`, `04_Mantenimiento.md`) |
-| `.specify/memory/*` | `data-model.md` (modelo de datos canónico, con changelog y qué specs dependen de cada tabla), `schema-change-protocol.md` (protocolo obligatorio que `/speckit.specify` y `/speckit.plan` invocan antes de crear o modificar cualquier estructura, ver `.claude/prompts/02_Desarrollo.md`) y `db_ideas.md` (borrador humano de tablas concretas — nunca se importa en `CLAUDE.md`, ni se lee por comprobación automática de existencia: solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente). `specify init` añade aquí `constitution.md`. |
+| `.claude/prompts/*` | La biblioteca de prompts maestros del proyecto: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (el ciclo completo de una spec, de la petición al merge) |
+| `.specify/memory/*` | `data-model.md` (modelo de datos canónico, con changelog y qué specs dependen de cada tabla), `schema-change-protocol.md` (protocolo obligatorio que `/speckit.specify` y `/speckit.plan` invocan antes de crear o modificar cualquier estructura, ver `.claude/prompts/02_spec_development.md`) y `db_ideas.md` (borrador humano de tablas concretas — nunca se importa en `CLAUDE.md`, ni se lee por comprobación automática de existencia: solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente). `specify init` añade aquí `constitution.md`. |
 | `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), estático y gateado por la existencia de `pyproject.toml` |
 
 **Tensión aceptada**: al vivir `.claude/skills/`, `.claude/agents/` y `.claude/settings.json` en la raíz de este mismo repo, Claude Code los carga también mientras se edita la propia plantilla (no un proyecto Python real). Es un efecto colateral menor y aceptado a propósito — no hay mecanismo nativo de GitHub Template para excluir rutas al generar, y los hooks no tienen nada que ejecutar sobre ficheros Markdown.
 
-**Sobrescritura intencionada de este `CLAUDE.md`**: en el flujo downstream, el paso "Generar CLAUDE.md" (prompt `.claude/prompts/01_ClaudeMD.md`) sobrescribe este fichero con el `CLAUDE.md` real del proyecto — para entonces el humano ya no necesita las meta-instrucciones de esta plantilla.
+**Sobrescritura intencionada de este `CLAUDE.md`**: en el flujo downstream, el paso "Generar CLAUDE.md" (prompt `.claude/prompts/01_init_project.md`) sobrescribe este fichero con el `CLAUDE.md` real del proyecto — para entonces el humano ya no necesita las meta-instrucciones de esta plantilla.
 
-La numeración en `.claude/context/` es significativa y estructural: fija tanto el orden de lectura para humanos como el orden de import que exige `.claude/prompts/01_ClaudeMD.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Si añades, quitas o reordenas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_ClaudeMD.md`.
+**Separación entre perfil y convenciones**: `00_perfil_proyecto.md` contiene solo *valores* de un proyecto concreto; `01..05_*.md` contienen solo *convenciones*, iguales en todos los proyectos. Cuando una convención necesita un valor, remite al perfil en vez de declarar un placeholder propio — así `bootstrap.ps1` escribe en un único sitio y no hay doble fuente de verdad. Si añades un valor configurable nuevo, va al perfil, nunca a un fichero de convenciones.
+
+La numeración en `.claude/context/` es significativa y estructural: fija tanto el orden de lectura para humanos como el orden de import que exige `.claude/prompts/01_init_project.md` (el prompt que genera el `CLAUDE.md` de un proyecto *downstream*, distinto de este). Si añades, quitas o reordenas un fichero de contexto, actualiza todos los sitios que los enumeran: `README.md` y `.claude/prompts/01_init_project.md`.
 
 ### Principio rector de los `CLAUDE.md` downstream
 

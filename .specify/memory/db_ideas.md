@@ -12,7 +12,7 @@
 > **Único uso**: este fichero **no se consulta automáticamente**. Ningún agente comprueba si existe
 > ni lo lee por defecto. Se usa exclusivamente cuando el humano lo **referencia explícitamente
 > dentro del prompt de `/speckit.plan`** de la spec en la que quiere usarlo (p. ej. "ver
-> `db_ideas.md`, tabla `orders`") — ver `.claude/prompts/02_Desarrollo.md`. Si el prompt de esa spec no
+> `db_ideas.md`, tabla `orders`") — ver `.claude/prompts/02_spec_development.md`. Si el prompt de esa spec no
 > lo menciona, el asistente no lo consulta.
 >
 > **Cómo lo trata el asistente cuando sí se referencia**: este fichero es un **punto de partida, no

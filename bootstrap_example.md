@@ -10,8 +10,8 @@ Documentación completa de cada parámetro (qué rellena, valores válidos, efec
 # Ejecutar desde la raíz de Nombre-Proyecto (el repo creado desde la plantilla, no la plantilla misma).
 $params = @{
     # --- Obligatorios ---
-    ProjectName         = "Nombre-Proyecto"                                          # Rellena [NOMBRE_PROYECTO] en el prompt de CLAUDE.md y se usa para nombrar el GitHub Project si se usa -SetupGitHub
-    ProjectDescription  = "EDITAR: descripción de una línea del proyecto"            # Rellena [DESCRIPCIÓN_UNA_LÍNEA]
+    ProjectName         = "Nombre-Proyecto"                                          # Rellena [NOMBRE_PROYECTO] en .claude/context/00_perfil_proyecto.md y se usa para nombrar el GitHub Project si se usa -SetupGitHub
+    ProjectDescription  = "EDITAR: descripción de una línea del proyecto"            # Rellena [DESCRIPCIÓN_UNA_LÍNEA] en el perfil del proyecto
 
     # --- Opcionales (valor por defecto entre paréntesis) ---
     # NonObviousCommands = ""           # Comandos no evidentes, ej. cómo levantar la BD local (por defecto: queda pendiente de completar a mano)
@@ -23,7 +23,6 @@ $params = @{
     # --- Switches (comentados = desactivados) ---
     # SetupGitHub       = $true         # Completa en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, GitHub Project (pide confirmación antes de tocar nada remoto)
     # InstallGh         = $true         # Solo con -SetupGitHub: instala gh con winget si falta
-    # Force             = $true         # Sobrescribe ficheros ya modificados a mano
 }
 
 .\bootstrap.ps1 @params
