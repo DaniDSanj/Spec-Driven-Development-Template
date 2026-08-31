@@ -21,7 +21,7 @@ Clasifica la petición en una de estas categorías y dime cuál elegiste, con tu
 
 - CORRECCIÓN (bug en algo ya existente, sin cambio de alcance) → no requiere un ciclo SDD completo; basta con un fix directo + test de regresión + entrada de CHANGELOG.md en Fixed.
 - MEJORA PEQUEÑA (ajuste menor sobre una feature existente, sin nuevo modelo de datos ni nueva superficie de usuario) → ciclo SDD ligero: specify + clarify + implement directamente, sin plan completo si el plan existente de la feature original sigue siendo válido.
-- FUNCIONALIDAD NUEVA → ciclo SDD completo desde /speckit.constitution (si hay que revisar principios) o directamente /speckit.specify, siguiendo `@docs/Prompts/02_Desarrollo.md` y `@docs/Prompts/03_Cierre.md` igual que en el desarrollo original.
+- FUNCIONALIDAD NUEVA → ciclo SDD completo desde /speckit.constitution (si hay que revisar principios) o directamente /speckit.specify, siguiendo `@.claude/prompts/02_Desarrollo.md` y `@.claude/prompts/03_Cierre.md` igual que en el desarrollo original.
 
 No empieces a implementar nada hasta que confirmes conmigo la categoría elegida.
 ```

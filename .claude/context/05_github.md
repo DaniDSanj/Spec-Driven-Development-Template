@@ -1,7 +1,7 @@
 # Cómo trabajar con GitHub en este proyecto
 
-> Importado desde `CLAUDE.md` con `@.claude/context/05_github.md` (copia este fichero ahí, o
-> referencia esta ruta si prefieres mantenerlo fuera de `context/`).
+> Importado desde `CLAUDE.md` con `@.claude/context/05_github.md`. Este fichero ya vive en su ruta
+> final — viene incluido al crear el repo desde esta plantilla ("Use this template").
 
 ## Rama de trabajo
 
@@ -16,9 +16,8 @@
     por pequeña que sea, necesita su propia rama y PR.
   - El cierre automático de issues en GitHub Projects depende del evento "Pull request merged" con
     `Closes #N` en la descripción de la PR — sin rama de feature no hay PR, y sin PR los issues
-    quedan abiertos aunque el trabajo esté hecho (esto es exactamente lo que falló en
-    `001-login-skeleton`: 45 issues creados y ninguno cerrado por commitear directamente sobre
-    `dev`).
+    quedan abiertos aunque el trabajo esté hecho, por muchos issues que haya generado
+    `/speckit.taskstoissues`.
 - El humano (tú) es quien solicita las Pull Requests de `dev` hacia `main` de forma manual — el
   asistente **no** abre PRs a `main` de forma autónoma. Las PRs `feature/*` → `dev` son distintas:
   el asistente debe **proponer activamente** abrir esa PR al terminar `/speckit.implement`, sin
@@ -31,10 +30,10 @@
   `ci.yml`), `strict: true` (la rama debe estar actualizada con la base) y `enforce_admins: true`
   (nadie, ni el owner, puede saltárselo). `main` exige además 1 aprobación de PR humana
   (`required_approving_review_count: 1`).
-- Introducido tras un incidente real: la PR de `002-user-registration-households` se mergeó hacia
-  `dev` con el CI en rojo (variable de entorno `INVITE_CODE_HMAC_SECRET` ausente del workflow) sin
-  ningún bloqueo, porque `dev` no tenía ninguna regla de protección y `main` tenía
-  `required_status_checks.contexts` vacío pese a exigir aprobación de PR.
+- Sin estas reglas, una PR con el CI en rojo (p. ej. por una variable de entorno requerida ausente
+  del workflow) puede mergearse igual si la rama no tiene ninguna regla de protección propia —
+  `required_approving_review_count` no sustituye a `required_status_checks`, son comprobaciones
+  independientes.
 - Verificar/editar esta configuración vía `gh api repos/<owner>/<repo>/branches/<rama>/protection`
   (GET para leer, PUT para sobrescribir por completo — incluir siempre todos los campos que ya
   existían, no solo el que se cambia, o se pierden).
@@ -59,10 +58,6 @@ las dos primeras, comportamiento inconsistente) — el resto queda como mención
 ```text
 Closes #47, Closes #48, Closes #49, Closes #50
 ```
-
-Incidente real: la PR de `002-user-registration-households` usó el formato de lista y solo 2 de 32
-issues se cerraron automáticamente al mergear; hubo que cerrar los 30 restantes a mano. La PR de
-`001-login-skeleton` sí usó el formato correcto (repetido) y cerró sus 45 issues sin intervención.
 
 ## Repositorio público vs. privado
 
@@ -97,7 +92,8 @@ Este proyecto es: `[público / privado — indicar]`. Si es privado y el consumo
      - **Pull request merged** → Status: `Done`
      - **Auto-add to project**: filtro `is:issue` (o `is:issue,pr`) sobre el repositorio, para que
        los issues generados por `/speckit.taskstoissues` entren solos al tablero sin añadirlos a mano.
-- **GitHub Actions**: workflow mínimo recomendado en `.github/workflows/ci.yml`:
+- **GitHub Actions**: el workflow `.github/workflows/ci.yml` ya viene incluido en el repo (se creó
+  con la plantilla, no hace falta generarlo a mano):
 
 ```yaml
 name: CI
@@ -129,48 +125,9 @@ jobs:
         if: steps.check.outputs.exists == 'true'
 ```
 
-> El paso `Check for pyproject.toml` evita que el job falle si el `ci.yml` se sube antes de
+> El paso `Check for pyproject.toml` evita que el job falle si el `ci.yml` está presente antes de
 > ejecutar `uv init` (arranque del proyecto). En cuanto exista `pyproject.toml` en el repo, los
 > pasos de `uv` se ejecutan con normalidad — no hay que tocar el workflow ni recordar un orden.
-
-Para crearlo automáticamente, usa este comando (PowerShell — en Bash/Git Bash usa en su lugar
-`mkdir -p .github/workflows` y `cat > .github/workflows/ci.yml <<'EOF' ... EOF` con el mismo
-contenido YAML):
-```powershell
-# 1. Crear las carpetas de forma segura
-New-Item -ItemType Directory -Force -Path ".github/workflows"
-
-# 2. Crear el archivo con el contenido YAML
-@'
-name: CI
-on:
-  pull_request:
-    branches: [dev, main]
-  push:
-    branches: [dev]
-
-jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Check for pyproject.toml
-        id: check
-        run: echo "exists=$(test -f pyproject.toml && echo true || echo false)" >> "$GITHUB_OUTPUT"
-      - uses: astral-sh/setup-uv@v5
-        if: steps.check.outputs.exists == 'true'
-      - run: uv sync
-        if: steps.check.outputs.exists == 'true'
-      - run: uv run ruff check src/
-        if: steps.check.outputs.exists == 'true'
-      - run: uv run ruff format --check src/
-        if: steps.check.outputs.exists == 'true'
-      - run: uv run ty check
-        if: steps.check.outputs.exists == 'true'
-      - run: uv run pytest -q
-        if: steps.check.outputs.exists == 'true'
-'@ | Out-File -FilePath ".github/workflows/ci.yml" -Encoding utf8
-```
 
   Añade jobs adicionales (`release-please` o `git-cliff` para changelog automático desde Conventional
   Commits) cuando el proyecto lo justifique.
@@ -181,10 +138,14 @@ jobs:
 
 ## Checklist de puesta en marcha (una vez por repo)
 
-- [ ] Crear repo (`público`/`privado` según la tabla de arriba).
+- [ ] Crear el repo desde esta plantilla: botón "Use this template" en GitHub, o
+      `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`
+      (`público`/`privado` según la tabla de arriba). `.github/workflows/ci.yml` ya viene incluido.
 - [ ] Crear rama `dev` desde `main` y marcarla como rama por defecto para nuevos PRs.
 - [ ] Branch protection en `main`: requiere PR + CI en verde.
-- [ ] Añadir `.github/workflows/ci.yml`.
 - [ ] Crear GitHub Project (Board/Kanban) vinculado al repo y activar sus Workflows (ver sección
       "Piezas gratuitas combinables").
 - [ ] Configurar `Spending limit = $0` en `Settings → Billing` para evitar cargos accidentales de Actions.
+
+`bootstrap.ps1 -SetupGitHub` automatiza (best-effort) los tres pasos intermedios sobre un repo ya
+creado desde la plantilla.

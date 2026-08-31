@@ -1,6 +1,6 @@
 # Fichero de Generación de `CLAUDE.md`
 
-Una vez, al arrancar un proyecto nuevo (Fase 0), **después** de haber copiado y rellenado los ficheros de `context/` (01 a 04) y `github/01_github_workflow.md` con los datos reales del proyecto. El prompt le pide a Claude que lea esos ficheros ya rellenos y genere un `CLAUDE.md` corto que los referencie, en vez de repetir su contenido.
+Una vez, al arrancar un proyecto nuevo (Fase 0), **después** de haber rellenado los placeholders de `.claude/context/01..05_*.md` (ya presentes en el repo desde que se creó con "Use this template") con los datos reales del proyecto. El prompt le pide a Claude que lea esos ficheros ya rellenos y genere un `CLAUDE.md` corto que los referencie, en vez de repetir su contenido. Nota: al ejecutarse, este prompt sobrescribe el `CLAUDE.md` que trae la plantilla (esa sobrescritura es intencionada).
 
 ## Prompt
 
@@ -9,7 +9,7 @@ Rellena estos datos:
 - `[NOMBRE_PROYECTO]`
 - `[DESCRIPCIÓN_UNA_LÍNEA]`
 - `[COMANDOS_NO_OBVIOS]` (ej. cómo levantar la BD local, cómo correr un seed de datos)
-- Confirma que `context/01..04` y `github/01_github_workflow.md` ya están copiados dentro de `.claude/context/` (o la ruta que uses) y rellenos.
+- Confirma que `.claude/context/01..05_*.md` ya están rellenos con los datos reales del proyecto.
 
 ```
 Vas a generar el fichero CLAUDE.md de la raíz de este proyecto.
