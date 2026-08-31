@@ -1,0 +1,27 @@
+name: CI
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check for pyproject.toml
+        id: check
+        run: echo "exists=$(test -f pyproject.toml && echo true || echo false)" >> "$GITHUB_OUTPUT"
+      - uses: astral-sh/setup-uv@v5
+        if: steps.check.outputs.exists == 'true'
+      - run: uv sync
+        if: steps.check.outputs.exists == 'true'
+      - run: uv run ruff check src/
+        if: steps.check.outputs.exists == 'true'
+      - run: uv run ruff format --check src/
+        if: steps.check.outputs.exists == 'true'
+      - run: uv run ty check
+        if: steps.check.outputs.exists == 'true'
+      - run: uv run pytest -q
+        if: steps.check.outputs.exists == 'true'
