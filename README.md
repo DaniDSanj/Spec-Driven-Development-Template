@@ -11,7 +11,7 @@ Esta carpeta es una **plantilla de arranque** para iniciar cualquier proyecto nu
 > **Este `README.md` es documentación de la propia plantilla, no de tu proyecto.** Una vez completada
 > la puesta en marcha (todos los pasos de este documento), puedes borrarlo o sustituirlo por el README
 > real de tu proyecto — igual que `CLAUDE.md` se sobrescribe intencionadamente en el paso
-> ["Generar CLAUDE.md"](#3-generar-claudemd).
+> ["Generar CLAUDE.md"](#23-generar-claudemd).
 
 ## Índice
 
@@ -85,7 +85,7 @@ cd mi-proyecto/
 specify init --here --integration claude
 ```
 
-Spec-Kit detecta que ya estás dentro de una carpeta y no crea un subdirectorio nuevo: coloca `.specify/`, `specs/` y los comandos del agente directamente aquí, junto a `.specify/memory/data-model.md`, `schema-change-protocol.md` y `db_ideas.md` que ya trae la plantilla. Es el único caso relevante al usar esta plantilla, porque el repositorio (y por tanto la carpeta) ya existe desde que se creó con "Use this template".
+Spec-Kit detecta que ya estás dentro de una carpeta y no crea un subdirectorio nuevo: coloca `.specify/`, `specs/` y los comandos del agente directamente aquí, junto a `.specify/memory/data-model.md` y `db_ideas.md` que ya trae la plantilla. Es el único caso relevante al usar esta plantilla, porque el repositorio (y por tanto la carpeta) ya existe desde que se creó con "Use this template".
 
 #### Caso B — Spec-Kit crea la carpeta raíz del proyecto (no aplica con esta plantilla)
 
@@ -121,7 +121,7 @@ Spec-Kit soporta más de 30 agentes con la misma mecánica (`--integration gemin
 ### 1.3 Verificación tras la instalación
 
 ```bash
-ls .specify/memory/ # data-model.md, schema-change-protocol.md, db_ideas.md (ya en la plantilla) + constitution.md (nuevo, vacío hasta el primer /speckit.constitution)
+ls .specify/memory/ # data-model.md, db_ideas.md (ya en la plantilla) + constitution.md (nuevo, vacío hasta el primer /speckit.constitution)
 ls specs/ # vacío hasta la primera feature
 ls .claude/commands/ # (o la carpeta equivalente de tu agente)
 ```
@@ -142,10 +142,10 @@ Al haber creado el repo con "Use this template", estas rutas ya existen — no h
 
 ```bash
 ls .claude/context/       # 00_perfil_proyecto.md + 02_documentacion_mantenibilidad.md .. 05_github.md
-ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, adr-writer, db-schema-design, obsidian-sync, verify-prepare, verify-validate
-ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, db-designer.md, spec-verifier.md
+ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, adr-writer, obsidian-sync, verify-prepare, verify-validate
+ls .claude/agents/        # docs-updater.md, spec-critic.md, security-reviewer.md, database-manager.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
-ls .specify/memory/       # data-model.md, schema-change-protocol.md, db_ideas.md (+ constitution.md tras specify init)
+ls .specify/memory/       # data-model.md, db_ideas.md (+ constitution.md tras specify init)
 ls docs/                  # Specs/, ADR/records/, Data-Model/, Runbooks/, Changelog/, Meta/
 ls .github/workflows/     # ci.yml
 ```
@@ -181,7 +181,7 @@ asistente te lo menciona; los que **no** lo tienen (herramienta de migraciones, 
 objetivo, versión del motor) el asistente te los preguntará antes de generar nada que dependa de
 ellos, en vez de asumirlos en silencio.
 
-`schema-change-protocol.md` y `db_ideas.md` no requieren relleno inicial: el primero es el protocolo obligatorio que `/speckit.specify` y `/speckit.plan` invocan antes de crear o modificar cualquier estructura; el segundo es un borrador humano de tablas concretas que solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente (ver [Estructura de la plantilla](#estructura-de-la-plantilla)).
+`db_ideas.md` no requiere relleno inicial: es la bandeja de entrada donde apuntar ideas de tabla que aún no pertenecen a ninguna feature, y ningún paso del ciclo la lee. El boceto de una feature concreta vive en `specs/<feature>/db_ideas.md`, y el protocolo de cambio de esquema es hoy la skill `db-model-protocol` (ver [Estructura de la plantilla](#estructura-de-la-plantilla)).
 
 ### 2.3 Generar CLAUDE.md
 
@@ -206,10 +206,9 @@ Sigue el checklist de puesta en marcha al final de [**05_github.md**](./.claude/
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `02`, `04` y `05` no llevan placeholders: son solo convenciones).
-- [ ] `.specify/memory/data-model.md` y `.specify/memory/schema-change-protocol.md` presentes
-      (`db_ideas.md` es opcional y mantiene corchetes de plantilla a propósito, no cuenta para este
-      punto).
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (los `02` y `05` no llevan placeholders: son solo convenciones).
+- [ ] `.specify/memory/data-model.md` presente (`db_ideas.md` es opcional y mantiene corchetes de
+      plantilla a propósito, no cuenta para este punto).
 - [ ] `CLAUDE.md` generado y revisado a mano (sobrescribe el de la plantilla).
 - [ ] Vault de Obsidian con los plugins comunitarios instalados.
 - [ ] Repo GitHub con rama `dev`, CI y branch protection configurados.
@@ -250,8 +249,17 @@ Convenciones de escritura de código Python (gestión con `uv`, layout `src/`, t
 ##### `dev-python-testing`
 Convenciones de testing (pytest, `tests/` como espejo de `src/[paquete]/`, mockeo obligatorio de conexiones a BD y de todo lo externo, cobertura mínima del perfil) y la regla dura de que ningún endpoint o función de negocio se cierra en `tasks.md` sin al menos un test. Se carga junto a `dev-python-coding` en el paso 4.1, y es plana por el mismo motivo.
 
-##### `db-schema-design`
-Encapsula las convenciones de [**04_base_datos.md**](./.claude/context/04_base_datos.md) (naming, campos de auditoría, política de índices) para que el asistente las aplique al diseñar cualquier tabla nueva sin tener que repetírselas cada vez. Válida tanto para PostgreSQL como para SQL Server.
+##### `db-model-conventions`
+Convenciones de esquema (motor, naming, campos de auditoría obligatorios con su trigger, política de índices, regla de migraciones y anexo de cuándo introducir NoSQL), válidas tanto para PostgreSQL como para SQL Server. Lee del perfil del proyecto el motor, la versión, la convención de PK, el uso de schemas y la herramienta de migraciones. Se carga en el paso 2.1, justo antes de `/speckit.plan`, y sigue en contexto para el 4.1. **Es una skill plana**: `/speckit.plan` es un comando de Spec-Kit cuyo interior no controlamos y es él quien genera `data-model.md`, así que la única forma determinista de que lo genere bien es tener las convenciones puestas cuando arranca.
+
+##### `db-model-ideas`
+Recoge el boceto humano de tablas de la feature en `specs/<feature>/db_ideas.md`, con la plantilla de bloque por tabla y la regla de que es un punto de partida, nunca una fuente de verdad. Se usa en el paso 1.4. El boceto es por feature a propósito: dos features en ramas paralelas no se pisan el fichero, y `/speckit.plan` no arrastra al contexto tablas ajenas. También plana.
+
+##### `db-model-protocol`
+Diseña el esquema de la feature y lo reconcilia contra el modelo canónico en contexto limpio: reutilización antes que creación, análisis de impacto sobre cada spec dependiente, y prioridad de la spec nueva sobre la antigua. Entrega DDL, `erDiagram` Mermaid y la tabla de specs afectadas, y **no aplica nada** — espera aprobación humana explícita. Se usa en el paso 2.2. Se apoya en el subagente `database-manager`.
+
+##### `db-model-integration`
+Tras la aprobación explícita del esquema, entrega el comando exacto de la herramienta de migraciones y el DDL revisado —**nunca escribe el fichero de migración**, que el hook bloquea a propósito— y actualiza `.specify/memory/data-model.md` (entidad + changelog), el `data-model.md` local de la spec y las readaptaciones aprobadas. Se usa en el paso 4.2. Se apoya en el subagente `database-manager`.
 
 ##### `adr-writer`
 Sabe el formato exacto de ADR, dónde vive (`docs/ADR/records/`), y aplica la regla append-only + supersede automáticamente.
@@ -274,8 +282,8 @@ Todos los subagentes son solo **recomendaciones** para este stack en concreto y 
 ##### `spec-critic`
 Motor de crítica compartido por las skills `critic-requirements`, `critic-plan` y `critic-verifications`. Contexto limpio: solo ve los ficheros de la feature, no el histórico de la conversación de planificación. Es read-only por construcción (`tools: Read, Grep, Glob`): observa y reporta, nunca escribe ni corrige lo que encuentra roto.
 
-##### `db-designer`
-Propone y valida esquemas SQL contra las convenciones de [**04_base_datos.md**](./.claude/context/04_base_datos.md); se invoca durante `/speckit.plan` o `/speckit.implement` cuando la feature toca el modelo de datos.
+##### `database-manager`
+Motor de base de datos compartido por las skills `db-model-protocol` y `db-model-integration`. Contexto limpio: ve el modelo canónico y los ficheros de la feature, no el histórico de la conversación de planificación. No tiene `Bash` ni `Write` (`tools: Read, Grep, Glob, Edit`): no escribe migraciones ni las aplica, y no modifica el modelo canónico sin aprobación humana explícita y previa.
 
 ##### `docs-updater`
 Tras `/speckit.converge`, redacta el ADR/Changelog/nota de vault correspondientes según la tabla de disparo, y los deja listos para revisión humana antes de commitear.
@@ -292,7 +300,7 @@ Todos los hooks son solo **recomendaciones** para este stack en concreto y ya vi
 
 1. **PostToolUse en `Edit`/`Write` sobre `*.py`** → `ruff format` + `ruff check --fix` + `ty check` automáticos.
 2. **Stop** → `uv run pytest -q`; si falla, Claude ve el resultado antes de dar la tarea por cerrada.
-3. **PreToolUse en `Write`/`Edit` sobre `migrations/**` o `.env*`** → bloquea la escritura (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). El humano decide manualmente si aplica el cambio por otra vía.
+3. **PreToolUse en `Write`/`Edit`/`Bash` sobre `migrations/**` o `.env*`** → bloquea la escritura (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). El humano decide manualmente si aplica el cambio por otra vía. Cubre `Bash` además de `Write`/`Edit` porque si no, un `alembic revision`, un `sed -i` o un `echo >` lo rodearían y la red de seguridad sería decorativa. Dos compromisos deliberados: para `migrations/` bloquea cualquier comando que mencione la ruta, lectura incluida (leer una migración se hace con las herramientas `Read`/`Grep`, que no pasan por el hook); para `.env` bloquea solo cuando es destino de escritura, para no romper usos legítimos como `docker compose --env-file`.
 4. **PreToolUse en `Write`/`Edit`, scopeado al subagente `spec-verifier`** (declarado en `.claude/agents/spec-verifier.md`, no en la lista de arriba) → bloquea cualquier escritura suya que no sea `quickstart_agent.md` de la feature activa.
 
 En sistemas Unix, verifica que son ejecutables (Windows no lo necesita): `chmod +x .claude/hooks/*.sh`.
@@ -318,7 +326,7 @@ Aplica a todos tus proyectos con este stack, ej. convenciones Python/PostgreSQL 
 
 ```bash
 mkdir -p ~/.claude/skills ~/.claude/agents
-cp -r .claude/skills/db-schema-design ~/.claude/skills/
+cp -r .claude/skills/db-model-conventions ~/.claude/skills/
 cp .claude/agents/spec-critic.md ~/.claude/agents/
 ```
 
@@ -332,11 +340,11 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | Ruta | Contenido |
 | --- | --- |
 | `.claude/context/00_perfil_proyecto.md` | Los valores concretos de este proyecto (versión de Python, motor de BD, herramienta de migraciones, visibilidad…). **El único fichero de contexto que se rellena** — referenciado desde `CLAUDE.md` con `@` |
-| `.claude/context/02_documentacion_mantenibilidad.md`, `04_base_datos.md` | Convenciones de documentación y de base de datos — referenciadas desde `CLAUDE.md` con `@`. Las de código Python ya no viven aquí: son las skills `dev-python-coding` y `dev-python-testing` |
+| `.claude/context/02_documentacion_mantenibilidad.md` | Convenciones de documentación — referenciadas desde `CLAUDE.md` con `@`. Las de código Python y las de base de datos ya no viven aquí: son las skills `dev-python-*` y `db-model-*` |
 | `.claude/context/05_github.md` | Flujo de trabajo con GitHub (ramas, branch protection, Issues/Projects) — referenciado con `@` |
-| `.specify/memory/data-model.md`, `schema-change-protocol.md`, `db_ideas.md` | Modelo de datos canónico y protocolo de cambio de esquema que usan `/speckit.specify` y `/speckit.plan`; `db_ideas.md` (borrador humano de tablas concretas) solo se consulta cuando el prompt de `/speckit.plan` de una spec lo referencia explícitamente. Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
-| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-schema-design`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
-| `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `db-designer`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
+| `.specify/memory/data-model.md`, `db_ideas.md` | Estado real del proyecto, nunca método: el modelo de datos canónico, y la bandeja de entrada de ideas de tabla sin feature asignada (que ningún paso del ciclo lee — el boceto de una feature vive en `specs/<feature>/db_ideas.md`). Nada de esta carpeta se importa en `CLAUDE.md`. `specify init` añade aquí además `constitution.md` |
+| `.claude/skills/*` | Skills recomendadas (`critic-requirements`, `critic-plan`, `critic-verifications`, `dev-python-coding`, `dev-python-testing`, `db-model-conventions`, `db-model-ideas`, `db-model-protocol`, `db-model-integration`, `adr-writer`, `obsidian-sync`, `verify-prepare`, `verify-validate`) |
+| `.claude/agents/*` | Subagentes recomendados (`spec-critic`, `database-manager`, `docs-updater`, `security-reviewer`, `spec-verifier`) |
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
 | `docs/` | Esqueleto del vault de Obsidian (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/` con las guías de setup/workflow y las plantillas de nota) |
@@ -346,4 +354,4 @@ Este `README.md`, `bootstrap.ps1` y `bootstrap_example.md` son documentación **
 
 ## Principio rector de toda la plantilla
 
-`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores y las convenciones que aún son fichero de contexto, con imports (`@.claude/context/02_documentacion_mantenibilidad.md`, etc.); el conocimiento ya migrado a skills, con la tabla de enrutado (`/critic-requirements`, `/critic-plan`, `/critic-verifications`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.
+`CLAUDE.md` se mantiene deliberadamente corto. La sustancia vive fuera de él y solo se referencia: los valores y las convenciones que aún son fichero de contexto, con imports (`@.claude/context/02_documentacion_mantenibilidad.md`, etc.); el conocimiento ya migrado a skills, con la tabla de enrutado (`/critic-*`, `/dev-python-*`, `/db-model-*`). Esto evita que un `CLAUDE.md` sobrecargado haga que Claude ignore la mitad de las reglas: una skill se carga sola cuando su dominio es relevante, en vez de ocupar la ventana desde el primer turno.

@@ -1,25 +1,43 @@
-# Diseño de base de datos
+---
+name: db-model-conventions
+description: >
+  Convenciones de diseño de esquema de base de datos de este proyecto:
+  naming, campos de auditoría obligatorios, política de índices, regla de
+  migraciones y cuándo introducir NoSQL. Válidas tanto para PostgreSQL como
+  para SQL Server. Úsalo antes de diseñar, revisar o modificar cualquier
+  tabla o modelo de datos — en el paso 2.1 del ciclo SDD junto a
+  /speckit.plan, y en cualquier trabajo de esquema fuera del ciclo.
+---
 
-> Importado desde `CLAUDE.md` con `@.claude/context/04_base_datos.md`.
-> Contiene solo **convenciones**, comunes a PostgreSQL y SQL Server salvo donde se señala la
-> diferencia explícitamente. Los valores concretos de este proyecto (motor y versión, convención de
-> PK, uso de schemas, herramienta de migraciones) están en `@.claude/context/00_perfil_proyecto.md`
-> — consúltalo allí y aplica su regla de campos sin rellenar.
+# Convenciones de esquema de base de datos
+
+Los **valores** concretos de este proyecto (motor y versión, convención de PK, uso de schemas,
+herramienta de migraciones) están en `.claude/context/00_perfil_proyecto.md`. Aplica su **regla de
+campos sin rellenar**: si el campo tiene default declarado y sigue vacío, úsalo y menciónalo en tu
+respuesta; si no tiene default seguro, pregunta antes de generar nada que dependa de él.
+
+Este fichero contiene solo convenciones, comunes a PostgreSQL y SQL Server salvo donde se señala la
+diferencia explícitamente. Las skills hermanas del dominio:
+
+| Skill | Cuándo |
+|---|---|
+| `db-model-ideas` | Bocetar tablas de una feature antes del plan |
+| `db-model-protocol` | Reconciliar el esquema propuesto contra el modelo canónico y analizar impacto |
+| `db-model-integration` | Generar la migración y actualizar el modelo canónico, tras aprobación |
 
 ## Motor
 
-Cuál usa este proyecto: ver **Base de datos → Motor** en `@.claude/context/00_perfil_proyecto.md`.
-PostgreSQL es el motor por defecto; SQL Server solo con justificación.
+Cuál usa este proyecto: ver **Base de datos → Motor** en el perfil. PostgreSQL es el motor por defecto;
+SQL Server solo con justificación.
 
 ## Convenciones de nombres
 
 - Tablas: plural, `snake_case` → `users`, `order_items`.
 - Columnas: singular, `snake_case` → `first_name`, `created_at`.
-- Clave primaria: ver **Base de datos → Convención de clave primaria** en
-  `@.claude/context/00_perfil_proyecto.md` (`id` por defecto).
+- Clave primaria: ver **Base de datos → Convención de clave primaria** en el perfil (`id` por defecto).
 - Clave foránea: `[tabla_referenciada_singular]_id` → `user_id`, `order_id`. Siempre indexada.
-- Schemas (PostgreSQL) para namespacing por dominio: ver **Base de datos → Uso de schemas** en
-  `@.claude/context/00_perfil_proyecto.md` (por defecto no se usan).
+- Schemas (PostgreSQL) para namespacing por dominio: ver **Base de datos → Uso de schemas** en el
+  perfil (por defecto no se usan).
 
 ## Campos de auditoría (obligatorios en toda tabla transaccional)
 
@@ -63,7 +81,8 @@ CREATE TABLE [nombre_tabla] (
 ```
 
 Usa siempre `TIMESTAMPTZ` en PostgreSQL (no `TIMESTAMP` sin zona horaria). Documenta cada tabla y
-columna no obvia con `COMMENT ON TABLE ...` / `COMMENT ON COLUMN ...`.
+columna no obvia con `COMMENT ON TABLE ...` / `COMMENT ON COLUMN ...` (o `sp_addextendedproperty` en
+SQL Server).
 
 ## Índices
 
@@ -76,31 +95,23 @@ columna no obvia con `COMMENT ON TABLE ...` / `COMMENT ON COLUMN ...`.
     subconjunto pequeño y estable.
 - No indexar columnas de baja cardinalidad (ej. un booleano) salvo como parte de un índice compuesto.
 - Antes de añadir un índice, justifícalo contra una query real esperada — el sobre-indexado penaliza
-  escritura y almacenamiento.
+  escritura y almacenamiento. Si no puedes nombrar la consulta que lo necesita, no lo propongas.
 - SQL Server: define explícitamente la clave clustered (debe ser *narrow, unique, static y
   ever-increasing* — normalmente la PK identity). Índices nonclustered en columnas de
   `WHERE`/`JOIN`/`ORDER BY`/`GROUP BY`.
 
-## Ideas de base de datos aportadas por el humano
-
-`.specify/memory/db_ideas.md` contiene borradores de tablas concretas (campos, tipos, claves, uso)
-escritos directamente por el humano — útil para aterrizar detalles técnicos que no salen bien
-explicando solo la funcionalidad. **No se consulta automáticamente**: solo se lee cuando el prompt de
-`/speckit.plan` de la spec en curso lo referencia explícitamente (p. ej. señalando una tabla
-concreta). Cuando así se referencia, **no es una fuente de verdad**: trátalo como punto de partida y
-aplica sobre él las convenciones de esta misma sección (naming, campos de auditoría, índices, motor)
-sin excepción, señalando explícitamente cualquier corrección que hagas sobre lo escrito por el
-humano.
-
 ## Migraciones
 
-- Herramienta: ver **Base de datos → Herramienta de migraciones** en
-  `@.claude/context/00_perfil_proyecto.md`. Es un campo **sin default seguro**: si sigue sin
-  rellenar, pregunta al usuario qué herramienta usa el proyecto antes de generar o proponer una
-  migración. Toda migración se genera, se revisa a mano y se versiona en Git; nunca se aplican
-  cambios de esquema directamente en la BD sin migración.
+- Herramienta: ver **Base de datos → Herramienta de migraciones** en el perfil. Es un campo **sin
+  default seguro**: si sigue sin rellenar, pregunta al usuario qué herramienta usa el proyecto antes de
+  generar o proponer una migración.
+- Toda migración se genera, se revisa a mano y se versiona en Git; nunca se aplican cambios de esquema
+  directamente en la BD sin migración, ni con un `ALTER TABLE` suelto.
 - Toda migración que afecte a datos ya existentes en producción requiere UAT humana explícita antes de
   aplicarse (la skill `critic-verifications` audita que esté señalada como tal).
+- El fichero de migración **no lo escribe el asistente**: `.claude/hooks/pre_edit_guard_sensitive.sh`
+  bloquea toda escritura sobre `migrations/**`. La skill `db-model-integration` entrega el comando
+  exacto y el DDL revisado, y lo ejecuta el humano.
 
 ---
 

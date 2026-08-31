@@ -12,10 +12,10 @@ un prompt por paso, en este orden.
 | Fase | Qué cubre |
 |---|---|
 | [0 — Encuadre](#fase-0--encuadre-solo-al-retomar-un-proyecto) | Reconstruir contexto y clasificar la petición |
-| [1 — Especificación](#fase-1--especificación) | `constitution` · `critic-requirements` · `specify` · `clarify` |
-| [2 — Plan](#fase-2--plan) | `plan` · esquema de datos · `tasks` · `critic-plan` |
+| [1 — Especificación](#fase-1--especificación) | `constitution` · `critic-requirements` · `specify` · `clarify` · `db-model-ideas` |
+| [2 — Plan](#fase-2--plan) | `db-model-conventions` + `plan` · `db-model-protocol` · `tasks` · `critic-plan` |
 | [3 — Preparación](#fase-3--preparación-de-la-ejecución) | `verify-prepare` · issues · rama de feature |
-| [4 — Implementación](#fase-4--implementación) | `dev-python-*` + `implement` · migración · `verify-validate` · `critic-verifications` · UAT |
+| [4 — Implementación](#fase-4--implementación) | `dev-python-*` + `implement` · `db-model-integration` · `verify-validate` · `critic-verifications` · UAT |
 | [5 — Cierre](#fase-5--cierre) | `converge` · seguridad · documentación · commit y PR |
 
 ---
@@ -101,7 +101,7 @@ Quiero construir: [descripción breve de la feature].
 
 Antes de escribir la spec, entrevístame en detalle usando AskUserQuestion sobre las categorías que quedaron abiertas: [las que liste 1.1]. No hagas preguntas obvias; dig into las partes difíciles que quizá no he considerado. No asumas nada en silencio: si algo es ambiguo, pregunta antes de escribir spec.md, y de una pregunta cada vez.
 
-Antes de definir cualquier estructura de datos, consulta .specify/memory/data-model.md y sigue el protocolo descrito en .specify/memory/schema-change-protocol.md para cualquier creación o modificación de esquema.
+Si la feature toca datos, consulta .specify/memory/data-model.md para saber qué existe ya, pero no propongas esquema nuevo aquí: la spec describe la necesidad funcional. El diseño y la reconciliación contra el modelo canónico se hacen en el paso 2.2 con la skill /db-model-protocol.
 ```
 
 **Siguiente:** [1.3](#13--speckitclarify-mínimo-dos-pasadas).
@@ -115,16 +115,25 @@ Antes de definir cualquier estructura de datos, consulta .specify/memory/data-mo
 Repite una segunda vez tras resolver las primeras preguntas — cada pasada detecta ambigüedades
 distintas porque escanea categorías diferentes.
 
-**Siguiente:** [1.4](#14--si-la-feature-toca-el-modelo-de-datos-boceto-de-tablas) si la feature toca datos; si no, [2.1](#21--speckitplan).
+**Siguiente:** [1.4](#14--si-la-feature-toca-el-modelo-de-datos-db-model-ideas) si la feature toca datos; si no, [2.1](#21--speckitplan).
 
-### 1.4 — *(si la feature toca el modelo de datos)* Boceto de tablas
+### 1.4 — *(si la feature toca el modelo de datos)* `/db-model-ideas`
 
 Si tienes ideas concretas de tablas/campos/tipos/claves para esta feature (más rápidas de dibujar que
-de explicar en prosa), apúntalas antes en `.specify/memory/db_ideas.md` — es un fichero transversal a
-todo el proyecto, no exclusivo de esta feature. El subagente que diseña el esquema **no lo lee por su
-cuenta**: solo lo consulta como borrador de partida (nunca como sustituto de las convenciones de
-`@.claude/context/04_base_datos.md`) si tú lo referencias explícitamente en el propio prompt del paso
-[2.1](#21--speckitplan).
+de explicar en prosa), apúntalas antes en `specs/<feature>/db_ideas.md`.
+
+```
+Carga la skill /db-model-ideas y prepárame `specs/<feature>/db_ideas.md` con un bloque por cada una de estas tablas: [lista de tablas]. Voy a rellenarlo yo a mano.
+```
+
+El boceto es **por feature**, no transversal: así dos features en ramas paralelas no se pisan el
+fichero, y `/speckit.plan` no arrastra al contexto tablas ajenas. Si tienes ideas de tabla que aún no
+pertenecen a ninguna feature, la bandeja de entrada es `.specify/memory/db_ideas.md`, que **ningún
+paso del ciclo lee**; al recogerlas aquí, se **mueven**, no se copian.
+
+El motor que diseña el esquema **no lo lee por su cuenta**: solo lo consulta como borrador de partida
+(nunca como sustituto de las convenciones de `/db-model-conventions`) si tú lo referencias
+explícitamente en el propio prompt del paso [2.1](#21--speckitplan).
 
 **Siguiente:** [2.1](#21--speckitplan).
 
@@ -135,24 +144,39 @@ cuenta**: solo lo consulta como borrador de partida (nunca como sustituto de las
 ### 2.1 — `/speckit.plan`
 
 ```
+Si esta feature toca el modelo de datos, carga antes la skill /db-model-conventions. A continuación ejecuta /speckit.plan.
+
 /speckit.plan
 
 Genera el plan técnico. Stack: [Python versión] con [FastAPI/Django/Kivy/BeeWare/Flet según aplique], [PostgreSQL/SQL Server]. 
 
 Boceto de estructuras de datos necesarias para esta funcionalidad: 
-[No hay ideas dentro de esta spec] | [Puedes encontrarlo en `@.specify/memory/db_ideas.md`]
+[No hay ideas dentro de esta spec] | [Puedes encontrarlo en `@specs/<feature>/db_ideas.md`]
 
-Si la feature toca el modelo de datos, invoca al subagente db-designer para proponer el esquema siguiendo `@.claude/context/04_base_datos.md`. Reconcilia el boceto contra el modelo canónico en .specify/memory/data-model.md antes de aceptarlo como definitivo. Si detectas necesidad de modificar estructuras existentes, aplica el protocolo de .specify/memory/schema-change-protocol.md y preséntame la propuesta de impacto antes de continuar con el resto del plan.
+No des el esquema por definitivo aquí: la reconciliación contra el modelo canónico y el análisis de impacto se hacen en el paso siguiente.
 ```
 
-**Siguiente:** [2.2](#22--si-la-feature-toca-el-modelo-de-datos-propuesta-de-esquema-e-impacto) si toca datos; si no, [2.4](#24--si-hubo-decisión-arquitectónica-adr).
+La skill se carga **antes** de `/speckit.plan`, no dentro, por el mismo motivo que en el paso
+[4.1](#41--speckitimplement): `/speckit.plan` es un comando de Spec-Kit cuyo interior no controlamos, y
+es él quien genera `data-model.md`. Tenerlo con las convenciones puestas es lo que evita que haya que
+rehacer el esquema entero en 2.2.
 
-### 2.2 — *(si la feature toca el modelo de datos)* Propuesta de esquema e impacto
+**Siguiente:** [2.2](#22--si-la-feature-toca-el-modelo-de-datos-db-model-protocol) si toca datos; si no, [2.4](#24--si-hubo-decisión-arquitectónica-adr).
 
-El subagente entrega DDL completo, bloque Mermaid `erDiagram` y la lista de specs afectadas por
-cualquier modificación de una estructura existente. **Espera tu aprobación explícita** antes de que
-se aplique nada sobre el modelo canónico: ante conflicto entre una spec antigua y la nueva necesidad,
-la antigua se adapta a la nueva, nunca al revés.
+### 2.2 — *(si la feature toca el modelo de datos)* `/db-model-protocol`
+
+```
+Ejecuta la skill /db-model-protocol para la feature activa. [Toma como punto de partida `specs/<feature>/db_ideas.md`, tabla X.]
+```
+
+Reconcilia el esquema contra el modelo canónico en contexto limpio y entrega DDL completo, bloque
+Mermaid `erDiagram`, la tabla de specs afectadas con su readaptación propuesta, y la marca de UAT si
+toca datos de producción. Reutilizar antes que crear, y cada índice justificado contra una query real.
+
+**No aplica nada.** Espera tu aprobación explícita antes de que se toque el modelo canónico: ante
+conflicto entre una spec antigua y la nueva necesidad, la antigua se adapta a la nueva, nunca al revés.
+Lo aprobado aquí es lo que ejecuta el paso
+[4.2](#42--si-la-feature-incluye-una-migración-db-model-integration).
 
 **Siguiente:** [2.3](#23--si-el-plan-generó-data-modelmd-sincronizar-el-vault).
 
@@ -288,19 +312,26 @@ comando de Spec-Kit cuyo interior no controlamos, así que la única forma deter
 con las convenciones puestas es tenerlas ya en contexto cuando arranca. Son skills planas a propósito
 —no forkean a ningún subagente— porque el código se escribe en este mismo hilo, que es el que tiene
 `spec.md`, `plan.md`, `tasks.md` y el bucle de corrección del paso
-[4.3](#43--verify-validate-repite-tras-cada-corrección).
+[4.3](#43--verify-validate-repite-tras-cada-corrección). Si la feature toca datos y estás en una sesión
+nueva desde el paso [2.1](#21--speckitplan), carga también `/db-model-conventions`.
 
-**Siguiente:** [4.2](#42--si-la-feature-incluye-una-migración-aplicarla) si hay migración; si no, [4.3](#43--verify-validate-repite-tras-cada-corrección).
+**Siguiente:** [4.2](#42--si-la-feature-incluye-una-migración-db-model-integration) si hay migración; si no, [4.3](#43--verify-validate-repite-tras-cada-corrección).
 
-### 4.2 — *(si la feature incluye una migración)* Aplicarla
+### 4.2 — *(si la feature incluye una migración)* `/db-model-integration`
 
 Toda migración se genera, se revisa a mano y se versiona en Git; nunca se aplican cambios de esquema
 directamente en la BD. Si la migración afecta a **datos ya existentes en producción**, requiere UAT
 humana explícita antes de aplicarse.
 
 ```
-Genera la migración de esta feature con la herramienta de migraciones del proyecto (ver `@.claude/context/04_base_datos.md`) y muéstramela para revisión. No la apliques hasta que te lo confirme explícitamente. Tras la aprobación, actualiza `.specify/memory/data-model.md` (entidad + changelog).
+Ejecuta la skill /db-model-integration para la feature activa. La propuesta de esquema del paso 2.2 está aprobada.
 ```
+
+La skill **no escribe el fichero de migración**: te entrega el comando exacto de la herramienta del
+perfil y el contenido revisado, y lo ejecutas tú. `.claude/hooks/pre_edit_guard_sensitive.sh` bloquea
+esas escrituras —también vía `Bash`— a propósito: son superficie de datos de producción. Lo que sí
+actualiza la skill es `.specify/memory/data-model.md` (entidad + changelog), el `data-model.md` local
+de la spec y las readaptaciones aprobadas en las specs afectadas.
 
 **Siguiente:** [4.3](#43--verify-validate-repite-tras-cada-corrección).
 

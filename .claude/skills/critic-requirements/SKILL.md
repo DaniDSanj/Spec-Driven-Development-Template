@@ -65,9 +65,9 @@ Un único bloque de código, listo para pegar tal cual, que incluya:
 - La instrucción de entrevistar al humano con `AskUserQuestion` cubriendo las categorías que quedaron
   abiertas — nombradas explícitamente, no "las categorías de ambigüedad" en abstracto.
 - La instrucción de no asumir nada en silencio y de no hacer preguntas obvias: solo las partes difíciles.
-- La instrucción de consultar `.specify/memory/data-model.md` y seguir
-  `.specify/memory/schema-change-protocol.md` antes de definir cualquier estructura de datos, si la
-  feature toca el modelo de datos.
+- Si la feature toca el modelo de datos: la instrucción de consultar `.specify/memory/data-model.md`
+  para saber qué existe ya, y de **no proponer esquema nuevo en la spec** — el diseño y la
+  reconciliación contra el modelo canónico se hacen en el paso 2.2 con la skill `db-model-protocol`.
 
 ## Al terminar
 
