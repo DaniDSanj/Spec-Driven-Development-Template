@@ -1,8 +1,12 @@
-<#
+﻿<#
 .SYNOPSIS
   Completa la puesta en marcha de un proyecto creado a partir de esta plantilla SDD (GitHub Template
   Repository), siguiendo el mismo orden de pasos que las secciones "Instalación de Spec-Kit" y
   "Configuración del harness" de README.md.
+
+  Requiere PowerShell 7 o superior (`pwsh`). Windows PowerShell 5.1 no sirve: lee los ficheros .ps1
+  sin BOM como ANSI, con lo que todos los acentos de este script se corromperían y acabarían escritos
+  así en el perfil del proyecto.
 
 .DESCRIPTION
   El repositorio ya nace con todo el harness en su sitio (.claude/context, .claude/skills,
@@ -30,7 +34,10 @@
   del proyecto. Si se omite, se deja marcado como pendiente de completar a mano.
 
 .PARAMETER PythonVersion
-  Versión de Python a fijar en el perfil del proyecto (por defecto 3.12).
+  Versión de Python a fijar en el perfil del proyecto. Sin default a propósito: el perfil declara como
+  default "la última estable al iniciar el proyecto", y fijar aquí una versión concreta la
+  contradiría en silencio cada vez que Python publica una release. Si se omite, el placeholder queda
+  intacto y el checklist final lo recuerda como campo pendiente.
 
 .PARAMETER DbEngine
   Motor de base de datos: PostgreSQL, SQLServer o Ninguno. Se fija en el perfil del proyecto (por
@@ -78,6 +85,11 @@
   .\bootstrap.ps1 -ProjectName "mi-app" -ProjectDescription "API de gestión de pedidos" `
       -SetupGitHub -InstallGh
 #>
+
+# Va DESPUÉS del bloque de ayuda a propósito: un #Requires por delante de él impide que `Get-Help
+# .\bootstrap.ps1 -Full` reconozca la ayuda basada en comentarios y solo devuelva la sintaxis.
+#Requires -Version 7.0
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
@@ -88,7 +100,7 @@ param(
 
     [string]$NonObviousCommands = '',
 
-    [string]$PythonVersion = '3.12',
+    [string]$PythonVersion = '',
 
     [ValidateSet('PostgreSQL', 'SQLServer', 'Ninguno')]
     [string]$DbEngine = 'PostgreSQL',
@@ -128,7 +140,7 @@ function Write-Skip {
     Write-Host "  [omitido] $Message" -ForegroundColor DarkYellow
 }
 
-function Write-Warn2 {
+function Write-Note {
     param([string]$Message)
     Write-Host "  [aviso] $Message" -ForegroundColor Yellow
 }
@@ -148,7 +160,7 @@ function Test-Prereq {
     if ($Required) {
         Write-Host "  [FALTA] $Name (obligatorio)" -ForegroundColor Red
     } else {
-        Write-Warn2 "$Name no encontrado (opcional, algunas funciones no estarán disponibles)"
+        Write-Note "$Name no encontrado (opcional, algunas funciones no estarán disponibles)"
     }
     return $false
 }
@@ -160,7 +172,7 @@ function Test-Prereq {
 $ProjectPath = (Get-Location).ProviderPath
 
 if (-not (Test-Path -LiteralPath (Join-Path $ProjectPath '.git'))) {
-    throw "No se encuentra '.git' en $ProjectPath. Ejecuta este script desde la raíz del repositorio ya creado con 'Use this template' (o `gh repo create --template`) y clonado localmente."
+    throw "No se encuentra '.git' en $ProjectPath. Ejecuta este script desde la raíz del repositorio ya creado con 'Use this template' (o 'gh repo create --template') y clonado localmente."
 }
 if (-not (Test-Path -LiteralPath (Join-Path $ProjectPath '.claude\context'))) {
     throw "No se encuentra '.claude\context' en $ProjectPath. Este script solo funciona sobre un repositorio generado desde esta plantilla."
@@ -177,17 +189,18 @@ Write-Section 'Paso 0: prerrequisitos de máquina'
 $hasGit = Test-Prereq 'git' $true
 $hasUv = Test-Prereq 'uv' $true
 $hasSpecify = Test-Prereq 'specify' $true
-$hasJq = Test-Prereq 'jq' $false
+# bash y jq son obligatorios: los cuatro hooks de .claude/hooks/ se invocan con `bash` desde
+# .claude/settings.json y leen su entrada JSON con `jq`. Además, los dos guards de PreToolUse son
+# fail-closed, así que sin jq bloquean toda escritura en vez de dejarla pasar en silencio.
+$hasBash = Test-Prereq 'bash' $true
+$hasJq = Test-Prereq 'jq' $true
 $hasClaude = Test-Prereq 'claude' $false
 
-if (-not $hasJq) {
-    Add-ManualStep 'Instalar jq (usado por los hooks de .claude/hooks/*.sh): winget install jqlang.jq'
-}
 if (-not $hasClaude) {
     Add-ManualStep 'Instalar/autenticar Claude Code (claude) para poder generar y revisar CLAUDE.md'
 }
 
-if (-not ($hasGit -and $hasUv -and $hasSpecify)) {
+if (-not ($hasGit -and $hasUv -and $hasSpecify -and $hasBash -and $hasJq)) {
     Write-Host ''
     Write-Host 'Faltan herramientas obligatorias. Instálalas y vuelve a ejecutar el script:' -ForegroundColor Red
     if (-not $hasUv) {
@@ -199,11 +212,17 @@ if (-not ($hasGit -and $hasUv -and $hasSpecify)) {
     if (-not $hasGit) {
         Write-Host '  git:     https://git-scm.com/downloads'
     }
+    if (-not $hasBash) {
+        Write-Host '  bash:    viene con Git for Windows (Git Bash). Reinstala git marcando esa opción, o usa WSL.'
+    }
+    if (-not $hasJq) {
+        Write-Host '  jq:      winget install jqlang.jq  |  sudo apt install jq  |  brew install jq'
+    }
     exit 1
 }
 
 if ($InstallGh -and -not $SetupGitHub) {
-    Write-Warn2 '-InstallGh no tiene efecto sin -SetupGitHub; se ignora'
+    Write-Note '-InstallGh no tiene efecto sin -SetupGitHub; se ignora'
 }
 
 $hasGh = $false
@@ -278,7 +297,7 @@ $contextDest = Join-Path $ProjectPath '.claude\context'
 $profilePath = Join-Path $contextDest '00_perfil_proyecto.md'
 
 if (-not (Test-Path -LiteralPath $profilePath)) {
-    Write-Warn2 'no se encuentra .claude/context/00_perfil_proyecto.md; el repo no se generó desde una versión actual de la plantilla'
+    Write-Note 'no se encuentra .claude/context/00_perfil_proyecto.md; el repo no se generó desde una versión actual de la plantilla'
     Add-ManualStep 'Crear a mano .claude/context/00_perfil_proyecto.md con los datos del proyecto'
 } else {
     $content = Get-Content -LiteralPath $profilePath -Raw -Encoding UTF8
@@ -300,9 +319,15 @@ if (-not (Test-Path -LiteralPath $profilePath)) {
         '[NOMBRE_PROYECTO]'     = $ProjectName
         $descPlaceholder        = $ProjectDescription
         '[COMANDOS_NO_OBVIOS]'  = $nonObvious
-        '[3.14.7]'              = $PythonVersion
         '[PostgreSQL]'          = $engineEs
         '[privado]'             = $visibilityEs
+    }
+
+    # La versión de Python solo se toca si se pasó -PythonVersion. Sin ella, el placeholder queda
+    # intacto y se recuerda en el checklist final: el perfil declara como default "la última estable",
+    # y escribir aquí una versión fija lo contradiría en silencio.
+    if (-not [string]::IsNullOrWhiteSpace($PythonVersion)) {
+        $replacements['[3.14.7]'] = $PythonVersion
     }
 
     $newContent = $content
@@ -328,6 +353,10 @@ if (-not (Test-Path -LiteralPath $profilePath)) {
 
 Add-ManualStep 'Completar en .claude/context/00_perfil_proyecto.md los campos sin default: framework del proyecto, cobertura mínima de tests, versión del motor de BD y herramienta de migraciones'
 
+if ([string]::IsNullOrWhiteSpace($PythonVersion)) {
+    Add-ManualStep 'Fijar la versión de Python en .claude/context/00_perfil_proyecto.md (default declarado: la última estable en https://www.python.org/downloads/ al iniciar el proyecto), o relanzar el script con -PythonVersion'
+}
+
 # ---------------------------------------------------------------------------
 # Paso 3 — Generación de CLAUDE.md
 # ---------------------------------------------------------------------------
@@ -338,7 +367,7 @@ $claudeMdPromptSrc = Join-Path $ProjectPath '.claude\prompts\01_init_project.md'
 if (Test-Path -LiteralPath $claudeMdPromptSrc) {
     Write-Ok 'prompt disponible en .claude/prompts/01_init_project.md (sin placeholders: lee los datos del perfil)'
 } else {
-    Write-Warn2 'no se encuentra .claude/prompts/01_init_project.md'
+    Write-Note 'no se encuentra .claude/prompts/01_init_project.md'
 }
 Add-ManualStep 'Abrir `claude` dentro del proyecto, pegar el bloque de prompt de .claude/prompts/01_init_project.md y revisar el CLAUDE.md generado (sobrescribe el CLAUDE.md de la plantilla) antes de darlo por bueno'
 
@@ -359,7 +388,7 @@ if ($SetupGitHub) {
 
     $nameWithOwner = gh repo view --json nameWithOwner -q .nameWithOwner
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($nameWithOwner)) {
-        Write-Warn2 'no se pudo obtener el nombre del repositorio remoto (owner/repo); ¿tiene origin configurado?'
+        Write-Note 'no se pudo obtener el nombre del repositorio remoto (owner/repo); ¿tiene origin configurado?'
         Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, Project, spending limit)'
     } else {
         Write-Host ''
@@ -384,7 +413,18 @@ if ($SetupGitHub) {
                     Write-Skip 'no hay cambios pendientes de commit'
                 }
 
-                git checkout -b dev
+                # En una segunda ejecución la rama 'dev' ya existe: `git checkout -b` falla y, sin
+                # comprobarlo, el script seguiría trabajando desde la rama actual sin darse cuenta.
+                git rev-parse --verify --quiet refs/heads/dev *> $null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Skip "la rama 'dev' ya existe en local"
+                    git checkout dev
+                    if ($LASTEXITCODE -ne 0) { throw "no se pudo cambiar a la rama dev (código $LASTEXITCODE)" }
+                } else {
+                    git checkout -b dev
+                    if ($LASTEXITCODE -ne 0) { throw "no se pudo crear la rama dev (código $LASTEXITCODE)" }
+                }
+
                 git push -u origin dev
                 if ($LASTEXITCODE -ne 0) { throw "no se pudo publicar la rama dev (código $LASTEXITCODE)" }
                 Write-Ok "rama 'dev' publicada"
@@ -394,7 +434,7 @@ if ($SetupGitHub) {
                     if ($LASTEXITCODE -ne 0) { throw "gh repo edit devolvió el código $LASTEXITCODE" }
                     Write-Ok "'dev' marcada como rama por defecto"
                 } catch {
-                    Write-Warn2 "no se pudo marcar 'dev' como rama por defecto: $($_.Exception.Message)"
+                    Write-Note "no se pudo marcar 'dev' como rama por defecto: $($_.Exception.Message)"
                     Add-ManualStep "Marcar 'dev' como rama por defecto a mano (Settings -> Branches -> Default branch)"
                 }
 
@@ -416,7 +456,7 @@ if ($SetupGitHub) {
                         if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE (branch protection no suele estar disponible en repos privados sin GitHub Pro/Team)" }
                         Write-Ok "branch protection activada en '$branch'"
                     } catch {
-                        Write-Warn2 "no se pudo activar branch protection en '$branch': $($_.Exception.Message)"
+                        Write-Note "no se pudo activar branch protection en '$branch': $($_.Exception.Message)"
                         Add-ManualStep "Activar branch protection en '$branch' a mano (Settings -> Branches): check 'quality' requerido, strict, enforce admins — ver la seccion 2.5 (Configurar GitHub) del README.md"
                     }
                 }
@@ -432,11 +472,11 @@ if ($SetupGitHub) {
                     Write-Ok "GitHub Project '$ProjectName' creado y vinculado (número $($projectJson.number))"
                     Add-ManualStep 'Configurar a mano las Workflows nativas del GitHub Project recién creado (Item added/closed, PR merged, Auto-add) — ver checklist de la seccion 2.5 (Configurar GitHub) del README.md'
                 } catch {
-                    Write-Warn2 "no se pudo crear el GitHub Project automáticamente: $($_.Exception.Message)"
+                    Write-Note "no se pudo crear el GitHub Project automáticamente: $($_.Exception.Message)"
                     Add-ManualStep 'Crear el GitHub Project (Board/Kanban) y vincularlo al repo a mano — ver checklist de la seccion 2.5 (Configurar GitHub) del README.md'
                 }
             } catch {
-                Write-Warn2 "automatización de GitHub interrumpida: $($_.Exception.Message)"
+                Write-Note "automatización de GitHub interrumpida: $($_.Exception.Message)"
                 Add-ManualStep 'La configuración de rama/branch protection no terminó bien: revisa el estado en GitHub y completa a mano lo que falte (ver la seccion 2.5 (Configurar GitHub) del README.md)'
             }
         }
@@ -446,6 +486,7 @@ if ($SetupGitHub) {
 }
 
 Add-ManualStep 'Fijar Spending limit = $0 en GitHub (Settings -> Billing) — no tiene API/CLI'
+Add-ManualStep 'Activar la red local pre-push si la quieres (corre ruff/ty/pytest antes de cada push y ahorra minutos de Actions): git config core.hooksPath .githooks'
 
 # ---------------------------------------------------------------------------
 # Resumen final

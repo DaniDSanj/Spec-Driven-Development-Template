@@ -10,9 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Check for pyproject.toml
+      # Gate: hasta que el proyecto no tiene pyproject.toml Y src/, no hay nada que comprobar y los
+      # pasos de abajo fallarían por ausencia de entorno o de rutas, no por un problema real. El job
+      # se ejecuta igualmente y reporta el check `quality` en verde, que es lo que exige la branch
+      # protection de dev y main desde el primer commit del repo.
+      - name: Check project is initialized
         id: check
-        run: echo "exists=$(test -f pyproject.toml && echo true || echo false)" >> "$GITHUB_OUTPUT"
+        run: echo "exists=$(test -f pyproject.toml && test -d src && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - uses: astral-sh/setup-uv@v5
         if: steps.check.outputs.exists == 'true'
       - run: uv sync

@@ -2,12 +2,14 @@
 
 Supone que ya creaste el repositorio `Nombre-Proyecto` a partir de esta plantilla (botón "Use this template" en GitHub, o `gh repo create Nombre-Proyecto --template <owner>/Spec-Driven-Development-Template --clone`) y lo tienes clonado localmente.
 
-Script de ejemplo, listo para copiar y pegar en PowerShell, que ejecuta [`bootstrap.ps1`](./bootstrap.ps1) **desde la raíz de ese repositorio ya clonado** (no desde la plantilla). Incluye **todos** los parámetros del script (obligatorios y opcionales) como un hashtable editable, para poder revisarlos y modificarlos antes de lanzarlo.
+Script de ejemplo, listo para copiar y pegar en **PowerShell 7 (`pwsh`)**, que ejecuta [`bootstrap.ps1`](./bootstrap.ps1) **desde la raíz de ese repositorio ya clonado** (no desde la plantilla). Incluye **todos** los parámetros del script (obligatorios y opcionales) como un hashtable editable, para poder revisarlos y modificarlos antes de lanzarlo.
+
+> **PowerShell 7 o superior, no Windows PowerShell 5.1.** El script lo declara con `#Requires -Version 7.0` y se detendrá solo si lo lanzas con `powershell.exe`. Si no tienes `pwsh`: `winget install Microsoft.PowerShell`.
 
 Documentación completa de cada parámetro (qué rellena, valores válidos, efectos secundarios): `Get-Help .\bootstrap.ps1 -Full`, o la cabecera de comentarios del propio script.
 
 ```powershell
-# Ejecutar desde la raíz de Nombre-Proyecto (el repo creado desde la plantilla, no la plantilla misma).
+# Ejecutar con pwsh desde la raíz de Nombre-Proyecto (el repo creado desde la plantilla, no la plantilla misma).
 $params = @{
     # --- Obligatorios ---
     ProjectName         = "Nombre-Proyecto"                                          # Rellena [NOMBRE_PROYECTO] en .claude/context/00_perfil_proyecto.md y se usa para nombrar el GitHub Project si se usa -SetupGitHub
@@ -15,7 +17,7 @@ $params = @{
 
     # --- Opcionales (valor por defecto entre paréntesis) ---
     # NonObviousCommands = ""           # Comandos no evidentes, ej. cómo levantar la BD local (por defecto: queda pendiente de completar a mano)
-    PythonVersion       = "3.12"        # Versión de Python (por defecto "3.12")
+    # PythonVersion      = "3.14.7"     # Sin default: si se omite, el placeholder queda intacto y el checklist final lo recuerda (el perfil declara como default "la última estable")
     DbEngine            = "PostgreSQL"  # PostgreSQL | SQLServer | Ninguno (por defecto "PostgreSQL")
     Visibility          = "private"     # private | public (por defecto "private")
     SpecifyScriptType   = "ps"          # sh | ps | py (por defecto "ps")
@@ -28,4 +30,4 @@ $params = @{
 .\bootstrap.ps1 @params
 ```
 
-Al terminar, el script imprime un checklist con lo que quedó pendiente de revisión humana (generar y revisar `CLAUDE.md`, instalar plugins de Obsidian, crear el GitHub Project si no se usó `-SetupGitHub`, fijar el spending limit, etc.).
+Al terminar, el script imprime un checklist con lo que quedó pendiente de revisión humana (generar y revisar `CLAUDE.md`, completar los campos del perfil sin default, instalar plugins de Obsidian, crear el GitHub Project si no se usó `-SetupGitHub`, fijar el spending limit, activar la red local `pre-push`, etc.).
