@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Red local antes del push: corre las mismas cuatro comprobaciones que el job `quality` de
+# .github/workflows/ci.yml, para detener el problema en la máquina en vez de gastar minutos de
+# GitHub Actions y un ciclo de espera.
+#
+# Activación (no es automática, Git solo mira .git/hooks/ salvo que se le diga otra cosa):
+#
+#   git config core.hooksPath .githooks
+#
+# Para saltárselo puntualmente: `git push --no-verify`. Si lo necesitas a menudo, el problema no es
+# el hook.
+#
+# Mismo gate que el CI: si el proyecto todavía no está inicializado (sin pyproject.toml o sin src/),
+# no hay nada que comprobar y el push pasa.
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+
+if [[ ! -f "$REPO_ROOT/pyproject.toml" ]] || [[ ! -d "$REPO_ROOT/src" ]]; then
+  exit 0
+fi
+
+if ! command -v uv >/dev/null 2>&1; then
+  echo "pre-push: no se encuentra 'uv'; se omiten las comprobaciones locales." >&2
+  echo "          El job 'quality' del CI las hará igualmente sobre la PR." >&2
+  exit 0
+fi
+
+FAILED=0
+
+run_step() {
+  local label="$1"
+  shift
+  echo "pre-push: $label"
+  if ! "$@"; then
+    echo "pre-push: FALLA -> $label" >&2
+    FAILED=1
+  fi
+}
+
+run_step "ruff check src/"          uv run ruff check src/
+run_step "ruff format --check src/" uv run ruff format --check src/
+run_step "ty check"                 uv run ty check
+run_step "pytest -q"                uv run pytest -q
+
+if [[ $FAILED -ne 0 ]]; then
+  echo "" >&2
+  echo "pre-push: push abortado. Corrige lo de arriba antes de subir — es exactamente lo que" >&2
+  echo "          fallaría en el job 'quality' del CI, pero sin gastar minutos de Actions." >&2
+  exit 1
+fi
+
+exit 0
