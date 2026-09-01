@@ -1,0 +1,55 @@
+# .gitignore de la plantilla SDD.
+# Se hereda tal cual en cada proyecto creado con "Use this template": está escrito para el stack
+# de la plantilla (Python + uv + Obsidian + Claude Code), no solo para la plantilla misma.
+
+# --- Secretos --------------------------------------------------------------
+# El hook pre_edit_guard_sensitive.sh impide *escribir* estos ficheros desde el asistente;
+# estas reglas impiden *commitearlos* si los creas tú a mano.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ty_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# --- Entornos (uv) ---------------------------------------------------------
+# uv.lock NO se ignora a propósito: se versiona siempre (ver la skill dev-python-coding).
+.venv/
+venv/
+.python-version
+
+# --- Obsidian --------------------------------------------------------------
+# La configuración de plugins del vault SÍ se versiona (es lo que permite que otro humano
+# replique el vault); solo se ignora el estado local de la ventana y las cachés.
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.obsidian/cache
+docs/.trash/
+
+# --- Claude Code -----------------------------------------------------------
+# settings.json SÍ se versiona (es el harness compartido); settings.local.json es personal.
+.claude/settings.local.json
+
+# --- Sistema operativo y editores -----------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp

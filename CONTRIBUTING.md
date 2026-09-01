@@ -1,0 +1,58 @@
+# Contribuir a la plantilla
+
+Este repositorio es una **GitHub Template Repository**. No hay nada que compilar, lintar ni testear: lo
+que se mantiene es un conjunto de documentos y scripts que otro repositorio hereda intacto al pulsar
+"Use this template".
+
+Si lo que quieres es *usar* la plantilla, no contribuir a ella, el punto de entrada es
+[`README.md`](README.md).
+
+## La regla que más se incumple: propagar los renombrados
+
+Rutas, nombres de fichero, nombres de skill y numeración de pasos están **referenciados de forma cruzada**
+desde varios documentos a la vez. Renombrar o reordenar algo en un sitio obliga a propagarlo a todos.
+Los sitios que casi siempre hay que tocar a la vez:
+
+| Si cambias… | Actualiza también |
+|---|---|
+| Una skill de `.claude/skills/` | La tabla de enrutado de `.claude/prompts/01_init_project.md`, la sección "Skills" del `README.md` y el paso correspondiente de `.claude/prompts/02_spec_development.md` |
+| Un subagente de `.claude/agents/` | La sección "Subagentes" del `README.md` y las skills que lo declaran en `agent:` |
+| Un fichero de `.claude/context/` | El `README.md` y `.claude/prompts/01_init_project.md` (son los dos sitios que los enumeran). Los números **no se reasignan** al retirar un fichero |
+| La numeración de un paso del ciclo | Las `description` de las skills implicadas (Claude las lee para decidir cuándo autoinvocarlas) y los enlaces internos de `02_spec_development.md` |
+| Un placeholder de `00_perfil_proyecto.md` | El bloque `$replacements` de `bootstrap.ps1`, que sustituye literales |
+| Una sección numerada del `README.md` | `bootstrap.ps1` y la skill `git-update-repo` la citan por número ("la sección 2.5") |
+
+Antes de dar un cambio por cerrado, haz una pasada de consistencia sobre todo el repo. Dos comprobaciones
+mecánicas que ayudan:
+
+```bash
+# Enlaces internos y relativos rotos en todos los .md
+# Referencias a /skills y a subagentes que ya no existen
+```
+
+(No hay script; se hacen a mano o pidiéndoselo al asistente, que es como se hicieron en la auditoría de
+la v1.0.0.)
+
+## Estilo
+
+- **Idioma**: castellano, en todo el repositorio.
+- **Commits**: Conventional Commits, la misma convención que la plantilla impone a los proyectos que
+  genera (`feat`, `fix`, `refactor`, `docs`, `chore`…). Ver la skill `git-update-repo`.
+- **Ramas**: `main` es la rama que copia "Use this template" y debe estar siempre publicable; se trabaja
+  en `dev` y se integra con fast-forward.
+- **Documentos**: se escriben para alguien que llega sin contexto. Si una regla necesita justificación,
+  se justifica en línea; si un fichero solo tiene sentido con otro delante, se enlaza.
+
+## Qué cambios encajan y cuáles no
+
+**Encajan**: corregir inconsistencias entre documentos, mejorar la portabilidad de los hooks, ampliar una
+convención existente, añadir una skill que cubra un hueco real del ciclo SDD.
+
+**No encajan por defecto**: cambiar el stack fijo de la plantilla (Claude Code + Spec-Kit, Python,
+PostgreSQL/SQL Server, Obsidian, GitHub) o añadir skills "por si acaso". Más skills de las que se usan
+solo añaden ruido a la carga inicial del asistente; ese criterio es deliberado y está escrito en el
+`README.md`.
+
+## Seguridad
+
+Los fallos de seguridad no van en un issue público: ver [`SECURITY.md`](SECURITY.md).

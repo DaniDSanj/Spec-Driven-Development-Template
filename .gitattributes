@@ -1,0 +1,30 @@
+# Normalización de finales de línea.
+#
+# Motivo: los hooks de .claude/hooks/ y .githooks/ se ejecutan con `bash`. Si al clonar en Windows
+# (core.autocrlf=true, el default del instalador de Git for Windows) llegaran con CRLF, bash falla con
+# `$'\r': command not found` y el hook cae en su modo de error — que para PreToolUse significa que la
+# acción se permite igualmente. Forzar eol=lf en los scripts de shell cierra ese agujero en origen.
+
+* text=auto
+
+*.sh    text eol=lf
+*.bash  text eol=lf
+.githooks/* text eol=lf
+
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+*.md    text
+*.yml   text
+*.yaml  text
+*.json  text
+*.py    text eol=lf
+*.toml  text eol=lf
+
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.pdf   binary
+*.ico   binary
