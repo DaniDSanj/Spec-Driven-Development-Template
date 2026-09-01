@@ -5,7 +5,7 @@ description: >
   datos canónico en contexto limpio: reutilización antes que creación,
   análisis de impacto sobre las specs dependientes y propuesta en bloque a
   la espera de aprobación humana explícita. Entrega DDL y erDiagram, no
-  aplica nada. Úsalo en el paso 2.2 del ciclo SDD, tras /speckit.plan,
+  aplica nada. Úsalo en el paso 2.2 del ciclo SDD, tras /speckit-plan,
   siempre que la feature toque el modelo de datos.
 context: fork
 agent: database-manager

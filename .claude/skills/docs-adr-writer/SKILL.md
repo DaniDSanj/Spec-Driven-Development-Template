@@ -4,7 +4,7 @@ description: >
   Redacta un Architecture Decision Record en el vault de Obsidian del proyecto:
   ruta y numeración, formato Nygard, regla append-only con supersede, y el
   índice Dataview de docs/ADR/Overview.md. Úsalo en el paso 2.4 del ciclo SDD
-  —el mismo día de la decisión, antes de /speckit.tasks— y en el 5.3 para
+  —el mismo día de la decisión, antes de /speckit-tasks— y en el 5.3 para
   cualquier decisión que quedara sin ADR.
 context: fork
 agent: docs-manager

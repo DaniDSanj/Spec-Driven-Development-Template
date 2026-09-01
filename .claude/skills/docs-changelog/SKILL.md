@@ -15,7 +15,7 @@ propósito (así no puede commitear), y generar el changelog exige leer el rango
 
 ## Cuándo
 
-En el **cierre** de la feature, después de `/speckit.converge` y con los commits ya hechos. Nunca a
+En el **cierre** de la feature, después de `/speckit-converge` y con los commits ya hechos. Nunca a
 mano en mitad del desarrollo: las entradas se derivan de los commits, no al revés.
 
 ## Formato

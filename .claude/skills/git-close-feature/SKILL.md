@@ -5,6 +5,7 @@ description: >
   Closes #N repetido por cada issue que resuelve. Incluye la frontera dura de
   que el asistente propone la PR feature/* → dev pero nunca abre la PR dev →
   main. Úsalo en el paso 5.6 del ciclo SDD, tras el checklist de consistencia.
+disable-model-invocation: true
 ---
 
 # Cierre de la feature: commit, push y PR hacia `dev`
@@ -13,6 +14,10 @@ Esta skill es **plana**: no forkea. Redactar el mensaje de commit y el cuerpo de
 **qué** se ha implementado y **qué issues** cubre — justo lo que un contexto limpio no tiene. Y son
 acciones irreversibles hacia fuera (`push`, `gh pr create`): las ejecuta el hilo que ha acompañado la
 feature, no un fork sin memoria de ella.
+
+Y es **de invocación manual** (`disable-model-invocation: true`): por ese mismo carácter irreversible,
+el asistente no puede lanzarla por su cuenta al ver el código "terminado". La propone —eso sí, de forma
+activa, como exige el paso 4.5 del ciclo— y la disparas tú escribiendo `/git-close-feature`.
 
 El **formato** de los mensajes de commit no se repite aquí: está en `git-update-repo` (Conventional
 Commits con el ID de feature en el scope).
@@ -47,7 +52,7 @@ Un `Closes #N` por cada issue que la feature cubre (uno por tarea, o agrupado si
 compartían issue). Es lo único que dispara el Workflow "Pull request merged" → Status `Done` del
 GitHub Project; sin ello los issues quedan abiertos pese a que el trabajo esté mergeado.
 
-Los números de issue salen de `/speckit.taskstoissues` (paso 3.2). Si no los tienes a mano:
+Los números de issue salen de `/speckit-taskstoissues` (paso 3.2). Si no los tienes a mano:
 `gh issue list --search "<id-feature>" --state open`.
 
 ## Frontera dura

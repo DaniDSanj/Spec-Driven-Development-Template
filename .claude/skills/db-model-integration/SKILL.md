@@ -11,9 +11,9 @@ agent: database-manager
 background: false
 ---
 
-Tu tarea es **aplicar** el esquema ya aprobado de la feature activa. Es el paso 6 del protocolo de
-cambio de esquema, y solo se ejecuta después de que el humano haya aprobado explícitamente la propuesta
-que entregó `db-model-protocol`.
+Tu tarea es **aplicar** el esquema ya aprobado de la feature activa. Es el cierre del protocolo de
+cambio de esquema —el paso que sigue a los seis que recorre `db-model-protocol`— y solo se ejecuta
+después de que el humano haya aprobado explícitamente la propuesta que entregó esa skill.
 
 ## Antes de nada: verifica la aprobación
 

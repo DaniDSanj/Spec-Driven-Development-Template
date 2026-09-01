@@ -3,7 +3,7 @@
 Documento único del ciclo de vida de una feature, de la petición al merge. Se lee de arriba abajo:
 un prompt por paso, en este orden.
 
-- **Proyecto nuevo, primera feature** → empieza en el paso [1.0](#10--speckitconstitution-solo-la-primera-vez).
+- **Proyecto nuevo, primera feature** → empieza en el paso [1.0](#10--speckit-constitution-solo-la-primera-vez).
 - **Proyecto ya cerrado que retomas** (días, semanas o meses después) → empieza en la
   [Fase 0](#fase-0--encuadre-solo-al-retomar-un-proyecto), que decide qué fases de abajo aplican.
 - Los pasos marcados *(si …)* son condicionales: si la condición no se cumple, sáltalos.
@@ -40,7 +40,7 @@ Clasifica la petición en una de estas categorías y dime cuál elegiste, con tu
 
 - CORRECCIÓN (bug en algo ya existente, sin cambio de alcance) → no requiere un ciclo SDD completo; basta con un fix directo + test de regresión + entrada de CHANGELOG.md en Fixed.
 - MEJORA PEQUEÑA (ajuste menor sobre una feature existente, sin nuevo modelo de datos ni nueva superficie de usuario) → ciclo SDD ligero: specify + clarify + implement directamente, sin plan completo si el plan existente de la feature original sigue siendo válido.
-- FUNCIONALIDAD NUEVA → ciclo SDD completo desde /speckit.constitution (si hay que revisar principios) o directamente /speckit.specify.
+- FUNCIONALIDAD NUEVA → ciclo SDD completo desde /speckit-constitution (si hay que revisar principios) o directamente /speckit-specify.
 
 No empieces a implementar nada hasta que confirmes conmigo la categoría elegida.
 ```
@@ -54,9 +54,9 @@ tres casos.
 
 | Categoría | Fases que se ejecutan |
 |---|---|
-| **CORRECCIÓN** | Salta las Fases 1 y 2. Entra en [3.3](#33--git-update-repo) (rama), luego [4.1](#41--speckitimplement) con el fix + test de regresión, y cierra por la [Fase 5](#fase-5--cierre) (la entrada de changelog va bajo `Fixed`). |
-| **MEJORA PEQUEÑA** | [Fase 1](#fase-1--especificación) completa. En la Fase 2, si el plan original de la feature sigue siendo válido, salta de [2.1](#21--speckitplan) directo a [2.6](#26--speckittasks). Luego Fases 3, 4 y 5 normales. |
-| **FUNCIONALIDAD NUEVA** | Ciclo completo desde [1.0](#10--speckitconstitution-solo-la-primera-vez). |
+| **CORRECCIÓN** | Salta las Fases 1 y 2. Entra en [3.3](#33--git-update-repo) (rama), luego [4.1](#41--speckit-implement) con el fix + test de regresión, y cierra por la [Fase 5](#fase-5--cierre) (la entrada de changelog va bajo `Fixed`). |
+| **MEJORA PEQUEÑA** | [Fase 1](#fase-1--especificación) completa. En la Fase 2, si el plan original de la feature sigue siendo válido, salta de [2.1](#21--speckit-plan) directo a [2.6](#26--speckit-tasks). Luego Fases 3, 4 y 5 normales. |
+| **FUNCIONALIDAD NUEVA** | Ciclo completo desde [1.0](#10--speckit-constitution-solo-la-primera-vez). |
 
 **Siguiente:** el paso que indique la tabla según la categoría confirmada.
 
@@ -64,12 +64,12 @@ tres casos.
 
 ## Fase 1 — Especificación
 
-### 1.0 — `/speckit.constitution` (solo la primera vez)
+### 1.0 — `/speckit-constitution` (solo la primera vez)
 
 Solo en la primera feature del proyecto, o al cambiar los principios rectores.
 
 ```
-/speckit.constitution
+/speckit-constitution
 
 Establece los principios rectores de este proyecto: stack (Python [versión], PostgreSQL/SQL Server, Claude Code + Spec-Kit), disciplina de testing (TDD estricto en módulos de negocio, tests obligatorios antes de cerrar tarea), estilo de documentación (ADR en el vault de Obsidian, `CHANGELOG.md` en formato Keep a Changelog — lo detallan las skills `docs-*`), y cualquier restricción no negociable del proyecto (ej. no usar plataformas de pago).
 ```
@@ -87,15 +87,15 @@ alcance a cerrar (ordenada por impacto) y el **prompt aumentado** listo para peg
 siguiente. Los huecos marcados *(bloqueante)* se resuelven **antes** de pasar a 1.2, preguntando de
 una pregunta cada vez. No se rellena ningún hueco de alcance en silencio.
 
-**Siguiente:** [1.2](#12--speckitspecify), con los bloqueantes ya resueltos.
+**Siguiente:** [1.2](#12--speckit-specify), con los bloqueantes ya resueltos.
 
-### 1.2 — `/speckit.specify`
+### 1.2 — `/speckit-specify`
 
 Pega el prompt aumentado que devolvió [1.1](#11--critic-requirements) detrás del comando. Si no
 ejecutaste 1.1, esta es la plantilla mínima equivalente:
 
 ```
-/speckit.specify
+/speckit-specify
 
 Quiero construir: [descripción breve de la feature].
 
@@ -104,18 +104,18 @@ Antes de escribir la spec, entrevístame en detalle usando AskUserQuestion sobre
 Si la feature toca datos, consulta .specify/memory/data-model.md para saber qué existe ya, pero no propongas esquema nuevo aquí: la spec describe la necesidad funcional. El diseño y la reconciliación contra el modelo canónico se hacen en el paso 2.2 con la skill /db-model-protocol.
 ```
 
-**Siguiente:** [1.3](#13--speckitclarify-mínimo-dos-pasadas).
+**Siguiente:** [1.3](#13--speckit-clarify-mínimo-dos-pasadas).
 
-### 1.3 — `/speckit.clarify` (mínimo dos pasadas)
+### 1.3 — `/speckit-clarify` (mínimo dos pasadas)
 
 ```
-/speckit.clarify
+/speckit-clarify
 ```
 
 Repite una segunda vez tras resolver las primeras preguntas — cada pasada detecta ambigüedades
 distintas porque escanea categorías diferentes.
 
-**Siguiente:** [1.4](#14--si-la-feature-toca-el-modelo-de-datos-db-model-ideas) si la feature toca datos; si no, [2.1](#21--speckitplan).
+**Siguiente:** [1.4](#14--si-la-feature-toca-el-modelo-de-datos-db-model-ideas) si la feature toca datos; si no, [2.1](#21--speckit-plan).
 
 ### 1.4 — *(si la feature toca el modelo de datos)* `/db-model-ideas`
 
@@ -127,26 +127,26 @@ Carga la skill /db-model-ideas y prepárame `specs/<feature>/db_ideas.md` con un
 ```
 
 El boceto es **por feature**, no transversal: así dos features en ramas paralelas no se pisan el
-fichero, y `/speckit.plan` no arrastra al contexto tablas ajenas. Si tienes ideas de tabla que aún no
+fichero, y `/speckit-plan` no arrastra al contexto tablas ajenas. Si tienes ideas de tabla que aún no
 pertenecen a ninguna feature, la bandeja de entrada es `.specify/memory/db_ideas.md`, que **ningún
 paso del ciclo lee**; al recogerlas aquí, se **mueven**, no se copian.
 
 El motor que diseña el esquema **no lo lee por su cuenta**: solo lo consulta como borrador de partida
 (nunca como sustituto de las convenciones de `/db-model-conventions`) si tú lo referencias
-explícitamente en el propio prompt del paso [2.1](#21--speckitplan).
+explícitamente en el propio prompt del paso [2.1](#21--speckit-plan).
 
-**Siguiente:** [2.1](#21--speckitplan).
+**Siguiente:** [2.1](#21--speckit-plan).
 
 ---
 
 ## Fase 2 — Plan
 
-### 2.1 — `/speckit.plan`
+### 2.1 — `/speckit-plan`
 
 ```
-Si esta feature toca el modelo de datos, carga antes la skill /db-model-conventions. A continuación ejecuta /speckit.plan.
+Si esta feature toca el modelo de datos, carga antes la skill /db-model-conventions. A continuación ejecuta /speckit-plan.
 
-/speckit.plan
+/speckit-plan
 
 Genera el plan técnico. Stack: [Python versión] con [FastAPI/Django/Kivy/BeeWare/Flet según aplique], [PostgreSQL/SQL Server]. 
 
@@ -156,8 +156,8 @@ Boceto de estructuras de datos necesarias para esta funcionalidad:
 No des el esquema por definitivo aquí: la reconciliación contra el modelo canónico y el análisis de impacto se hacen en el paso siguiente.
 ```
 
-La skill se carga **antes** de `/speckit.plan`, no dentro, por el mismo motivo que en el paso
-[4.1](#41--speckitimplement): `/speckit.plan` es un comando de Spec-Kit cuyo interior no controlamos, y
+La skill se carga **antes** de `/speckit-plan`, no dentro, por el mismo motivo que en el paso
+[4.1](#41--speckit-implement): `/speckit-plan` es un comando de Spec-Kit cuyo interior no controlamos, y
 es él quien genera `data-model.md`. Tenerlo con las convenciones puestas es lo que evita que haya que
 rehacer el esquema entero en 2.2.
 
@@ -205,32 +205,32 @@ Ejecuta la skill /docs-adr-writer. En el plan de esta feature se ha tomado esta 
 Un ADR = una decisión, y los ADR aceptados son append-only: si esta decisión reemplaza a otra, la
 skill crea un ADR nuevo con `supersede:` en vez de editar el antiguo.
 
-**Siguiente:** [2.5](#25--speckitchecklist).
+**Siguiente:** [2.5](#25--speckit-checklist).
 
-### 2.5 — `/speckit.checklist`
-
-```
-/speckit.checklist
-```
-
-**Siguiente:** [2.6](#26--speckittasks).
-
-### 2.6 — `/speckit.tasks`
+### 2.5 — `/speckit-checklist`
 
 ```
-/speckit.tasks
+/speckit-checklist
 ```
 
-**Siguiente:** [2.7](#27--speckitanalyze-read-only).
+**Siguiente:** [2.6](#26--speckit-tasks).
 
-### 2.7 — `/speckit.analyze` (read-only)
+### 2.6 — `/speckit-tasks`
 
 ```
-/speckit.analyze
+/speckit-tasks
 ```
 
-Si reporta hallazgos, resuélvelos (vuelve a [1.2](#12--speckitspecify), [2.1](#21--speckitplan) o
-[2.6](#26--speckittasks) según corresponda) antes de continuar.
+**Siguiente:** [2.7](#27--speckit-analyze-read-only).
+
+### 2.7 — `/speckit-analyze` (read-only)
+
+```
+/speckit-analyze
+```
+
+Si reporta hallazgos, resuélvelos (vuelve a [1.2](#12--speckit-specify), [2.1](#21--speckit-plan) o
+[2.6](#26--speckit-tasks) según corresponda) antes de continuar.
 
 **Siguiente:** [2.8](#28--critic-plan-obligatorio).
 
@@ -245,8 +245,8 @@ Ejecuta la skill /critic-plan para la feature activa.
 Revisa `spec.md`, `plan.md` y `tasks.md` en contexto limpio (solo esos tres ficheros, no el histórico
 de la conversación de planificación) y devuelve el listado completo de hallazgos más un veredicto
 **GO/NO-GO**. Ante un **NO-GO** no se sigue "con reservas": se resuelve la objeción volviendo al paso
-que indique la ruta de resolución ([1.2](#12--speckitspecify), [2.1](#21--speckitplan) o
-[2.6](#26--speckittasks)) y se repite esta revisión entera.
+que indique la ruta de resolución ([1.2](#12--speckit-specify), [2.1](#21--speckit-plan) o
+[2.6](#26--speckit-tasks)) y se repite esta revisión entera.
 
 **Siguiente:** [3.1](#31--verify-prepare), solo con un GO.
 
@@ -260,20 +260,20 @@ que indique la ruta de resolución ([1.2](#12--speckitspecify), [2.1](#21--speck
 Ejecuta la skill /verify-prepare para la feature activa.
 ```
 
-Traduce `specs/<feature>/quickstart.md` (generado en el paso [2.1](#21--speckitplan)) a
+Traduce `specs/<feature>/quickstart.md` (generado en el paso [2.1](#21--speckit-plan)) a
 `specs/<feature>/quickstart_agent.md`, clasificando cada escenario como `automatizable` o `manual`.
 Se ejecuta después del GO de [2.8](#28--critic-plan-obligatorio) a propósito — traducir un
 `quickstart.md` que la crítica adversarial todavía podría hacer cambiar sería trabajo desechable. Si ya existía una versión previa de
 `quickstart_agent.md`, la fusión es idempotente: conserva el resultado de los escenarios sin cambios.
 
-**Siguiente:** [3.2](#32--speckittaskstoissues).
+**Siguiente:** [3.2](#32--speckit-taskstoissues).
 
-### 3.2 — `/speckit.taskstoissues`
+### 3.2 — `/speckit-taskstoissues`
 
 Features con más de ~5 tareas.
 
 ```
-/speckit.taskstoissues
+/speckit-taskstoissues
 ```
 
 Ejecútalo **antes** de implementar, nunca después: es lo que da seguimiento en tiempo real a las
@@ -300,27 +300,27 @@ Referencia de lo que ejecutará el asistente (no lo lances tú a mano):
 git checkout -b feature/<id-speckit>-<slug> dev
 ```
 
-**Siguiente:** [4.1](#41--speckitimplement).
+**Siguiente:** [4.1](#41--speckit-implement).
 
 ---
 
 ## Fase 4 — Implementación
 
-### 4.1 — `/speckit.implement`
+### 4.1 — `/speckit-implement`
 
 ```
-Carga las skills /dev-python-coding y /dev-python-testing, y a continuación ejecuta /speckit.implement.
+Carga las skills /dev-python-coding y /dev-python-testing, y a continuación ejecuta /speckit-implement.
 
 Implementa las tareas de esta feature aplicando esas convenciones. Para cada tarea que toque una superficie de usuario o datos de producción, señala explícitamente que requiere UAT humana antes de marcarla como cerrada y describe qué debo probar exactamente.
 ```
 
-Las dos skills se cargan **antes** de `/speckit.implement`, no dentro: `/speckit.implement` es un
+Las dos skills se cargan **antes** de `/speckit-implement`, no dentro: `/speckit-implement` es un
 comando de Spec-Kit cuyo interior no controlamos, así que la única forma determinista de que escriba
 con las convenciones puestas es tenerlas ya en contexto cuando arranca. Son skills planas a propósito
 —no forkean a ningún subagente— porque el código se escribe en este mismo hilo, que es el que tiene
 `spec.md`, `plan.md`, `tasks.md` y el bucle de corrección del paso
 [4.3](#43--verify-validate-repite-tras-cada-corrección). Si la feature toca datos y estás en una sesión
-nueva desde el paso [2.1](#21--speckitplan), carga también `/db-model-conventions`.
+nueva desde el paso [2.1](#21--speckit-plan), carga también `/db-model-conventions`.
 
 **Siguiente:** [4.2](#42--si-la-feature-incluye-una-migración-db-model-integration) si hay migración; si no, [4.3](#43--verify-validate-repite-tras-cada-corrección).
 
@@ -385,20 +385,20 @@ En cuanto las tareas y su UAT (automática y manual) queden validadas, el asiste
 activamente —como parte del cierre de esta tarea, no como ocurrencia tardía— abrir la PR hacia `dev`
 con `Closes #N` por cada issue que resuelve (paso [5.6](#56--git-close-feature)).
 
-**Siguiente:** [5.1](#51--speckitconverge).
+**Siguiente:** [5.1](#51--speckit-converge).
 
 ---
 
 ## Fase 5 — Cierre
 
-### 5.1 — `/speckit.converge`
+### 5.1 — `/speckit-converge`
 
 ```
-/speckit.converge
+/speckit-converge
 ```
 
-Si no reporta "Converged" sino trabajo pendiente, vuelve a [2.6](#26--speckittasks) o
-[4.1](#41--speckitimplement) para resolverlo antes de continuar.
+Si no reporta "Converged" sino trabajo pendiente, vuelve a [2.6](#26--speckit-tasks) o
+[4.1](#41--speckit-implement) para resolverlo antes de continuar.
 
 **Siguiente:** [5.2](#52--si-tocó-superficie-sensible-revisión-de-seguridad).
 

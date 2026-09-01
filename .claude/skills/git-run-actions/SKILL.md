@@ -43,8 +43,10 @@ Actions y un ciclo de espera.
 ## Límite duro: no se edita `ci.yml`
 
 `.github/workflows/ci.yml` es **estático a propósito** y está gateado por la existencia de
-`pyproject.toml` (el step `Check for pyproject.toml`, que evita que el job falle cuando el workflow
-ya está en el repo pero todavía no se ha ejecutado `uv init`). No lo regeneres ni lo parchees para
+`pyproject.toml` **y** de `src/` (el step `Check project is initialized`, que evita que el job falle
+cuando el workflow ya está en el repo pero todavía no se ha ejecutado `uv init` ni existe el paquete).
+Si el check `quality` sale verde sin haber ejecutado nada, es este gate: comprueba que el proyecto
+tiene ambas cosas antes de dar por buena la ausencia de fallos. No lo regeneres ni lo parchees para
 que un check pase: eso rompe la garantía de que el mismo workflow vale desde el primer commit del
 proyecto, y convierte un fallo real en uno silenciado.
 

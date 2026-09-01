@@ -24,7 +24,7 @@ están en `@.claude/context/00_perfil_proyecto.md`, bloque **GitHub**.
 | `dev` | Rama de integración y rama por defecto de los PRs (valor en el perfil). |
 | `feature/<id-speckit>-<slug>` | Una por feature. Se mergea a `dev` vía PR y se borra después. |
 
-El `<id-speckit>` es el identificador que genera `/speckit.specify` (`003`, `004`…) y el `<slug>` la
+El `<id-speckit>` es el identificador que genera `/speckit-specify` (`003`, `004`…) y el `<slug>` la
 versión corta del nombre de la feature: `feature/003-checkout-stock`.
 
 ```bash
@@ -42,7 +42,7 @@ independientes, cada una suficiente por sí sola:
    commit exista en GitHub.
 2. **Sin PR no se cierran los issues.** El cierre automático en GitHub Projects depende del evento
    "Pull request merged" con `Closes #N` en la descripción de la PR. Sin rama no hay PR, y sin PR los
-   issues que generó `/speckit.taskstoissues` quedan abiertos indefinidamente aunque el trabajo esté
+   issues que generó `/speckit-taskstoissues` quedan abiertos indefinidamente aunque el trabajo esté
    hecho y mergeado.
 
 ## Branch protection
@@ -99,7 +99,7 @@ una entrada que hay que escribir a mano, o en una que falta.
 
 ## Trazabilidad de extremo a extremo
 
-`/speckit.taskstoissues` conecta cada tarea de `tasks.md` con un Issue de GitHub. No lo omitas en
+`/speckit-taskstoissues` conecta cada tarea de `tasks.md` con un Issue de GitHub. No lo omitas en
 features de más de ~5 tareas: es la pieza que permite seguir el estado desde GitHub Projects y la que
 da los números de issue que `git-close-feature` necesita para la PR.
 

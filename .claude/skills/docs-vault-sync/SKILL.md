@@ -3,7 +3,7 @@ name: docs-vault-sync
 description: >
   Sincroniza el vault de Obsidian con el estado real de la feature: nota de
   spec, diagrama ER, espejo del changelog y enlaces cruzados con wikilinks.
-  Úsalo en el paso 2.3 del ciclo SDD (cuando /speckit.plan generó
+  Úsalo en el paso 2.3 del ciclo SDD (cuando /speckit-plan generó
   data-model.md) y en el 5.3 al cerrar la feature.
 context: fork
 agent: docs-manager
@@ -17,9 +17,9 @@ borrador para revisión humana. No commitees.
 
 | Evento | Nota a crear/actualizar | Formato |
 |---|---|---|
-| `/speckit.plan` generó `data-model.md` | `docs/Data-Model/[feature]-ER.md` | Bloque ```mermaid erDiagram``` |
-| `/speckit.specify` + `/speckit.clarify` cerrados | `docs/Specs/[feature].md` | Plantilla `docs/Meta/Templates/spec.md`, espejo de `specs/<feature>/spec.md` |
-| `/speckit.converge` → "Converged" | `docs/Specs/[feature].md` + `docs/Changelog/Changelog.md` | Espejo de la spec / espejo human-readable de `CHANGELOG.md` |
+| `/speckit-plan` generó `data-model.md` | `docs/Data-Model/[feature]-ER.md` | Bloque ```mermaid erDiagram``` |
+| `/speckit-specify` + `/speckit-clarify` cerrados | `docs/Specs/[feature].md` | Plantilla `docs/Meta/Templates/spec.md`, espejo de `specs/<feature>/spec.md` |
+| `/speckit-converge` → "Converged" | `docs/Specs/[feature].md` + `docs/Changelog/Changelog.md` | Espejo de la spec / espejo human-readable de `CHANGELOG.md` |
 | Decisión arquitectónica tomada | ADR nuevo → **usa la skill `docs-adr-writer`** | — |
 | Cambio rompe compatibilidad | ADR (`docs-adr-writer`) + `docs/Changelog/Changelog.md` | El ADR documenta el trade-off; la entrada de changelog va bajo `Changed`/`Removed` referenciando el `BREAKING CHANGE:` del commit |
 | Feature introduce un procedimiento operativo nuevo | `docs/Runbooks/[nombre].md` → **usa la skill `docs-runbook`** | — |

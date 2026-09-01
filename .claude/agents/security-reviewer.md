@@ -1,6 +1,6 @@
 ---
 name: security-reviewer
-description: Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/.env, migraciones, entradas no confiables) antes de /speckit.converge, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook pre_edit_guard_sensitive.sh revisando la lógica ya escrita, no solo bloqueando la escritura.
+description: Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/.env, migraciones, entradas no confiables) antes de /speckit-converge, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook pre_edit_guard_sensitive.sh revisando la lógica ya escrita, no solo bloqueando la escritura.
 tools: Read, Grep, Glob
 model: inherit
 ---
@@ -30,4 +30,4 @@ Reglas estrictas:
   (fichero:línea) cuando sea posible.
 - Si no encuentras nada explotable, dilo explícitamente en vez de inventar objeciones para parecer
   exhaustivo.
-- Termina con la lista de hallazgos Bloqueantes/Altos que deben resolverse antes de `/speckit.converge`.
+- Termina con la lista de hallazgos Bloqueantes/Altos que deben resolverse antes de `/speckit-converge`.

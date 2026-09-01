@@ -14,7 +14,7 @@
 >
 > **Dónde va el boceto de una feature concreta**: en `specs/<feature>/db_ideas.md`, con la skill
 > `db-model-ideas` (paso 1.4 de `.claude/prompts/02_spec_development.md`). Es por feature a propósito:
-> dos features en ramas paralelas no se pisan el fichero, y `/speckit.plan` no arrastra al contexto
+> dos features en ramas paralelas no se pisan el fichero, y `/speckit-plan` no arrastra al contexto
 > tablas ajenas.
 >
 > **Dónde vive el modelo ya aprobado**: en `.specify/memory/data-model.md`. Ese sí es transversal y sí

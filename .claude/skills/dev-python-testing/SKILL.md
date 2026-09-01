@@ -5,7 +5,7 @@ description: >
   tests/ como espejo de src/, mockeo de conexiones a base de datos,
   cobertura mínima objetivo y la regla de que ninguna tarea se cierra sin
   test. Úsalo antes de escribir o modificar tests — en el paso 4.1 del
-  ciclo SDD junto a /speckit.implement, y en cualquier edición de tests
+  ciclo SDD junto a /speckit-implement, y en cualquier edición de tests
   fuera del ciclo.
 ---
 

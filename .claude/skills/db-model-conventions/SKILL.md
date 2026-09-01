@@ -6,7 +6,7 @@ description: >
   migraciones y cuándo introducir NoSQL. Válidas tanto para PostgreSQL como
   para SQL Server. Úsalo antes de diseñar, revisar o modificar cualquier
   tabla o modelo de datos — en el paso 2.1 del ciclo SDD junto a
-  /speckit.plan, y en cualquier trabajo de esquema fuera del ciclo.
+  /speckit-plan, y en cualquier trabajo de esquema fuera del ciclo.
 ---
 
 # Convenciones de esquema de base de datos

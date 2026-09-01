@@ -3,9 +3,9 @@ name: verify-prepare
 description: >
   Traduce el quickstart.md de la feature activa (prosa orientada a un
   humano) a un fichero estructurado quickstart_agent.md, marcando cada
-  escenario como automatizable o manual. Úsalo después de /speckit.plan,
-  o cuando quickstart.md haya cambiado y quickstart_agent.md esté
-  desactualizado o no exista.
+  escenario como automatizable o manual. Úsalo en el paso 3.1 del ciclo SDD,
+  tras el veredicto GO de /critic-plan, o cuando quickstart.md haya cambiado
+  y quickstart_agent.md esté desactualizado o no exista.
 context: fork
 agent: spec-verifier
 background: false
@@ -15,6 +15,10 @@ Tu tarea es traducir `specs/<feature>/quickstart.md` a
 `specs/<feature>/quickstart_agent.md`, un formato estructurado y sin
 ambigüedad que otra skill (`verify-validate`) pueda ejecutar sin tener que
 interpretar prosa.
+
+Se ejecuta **después** del GO de `critic-plan` (paso 2.8), no justo tras
+`/speckit-plan`: traducir un `quickstart.md` que la crítica adversarial
+todavía podría hacer cambiar sería trabajo desechable.
 
 **No ejecutes ningún comando del proyecto en esta tarea.** Tu trabajo es
 puramente de lectura y transformación de texto — ni siquiera para

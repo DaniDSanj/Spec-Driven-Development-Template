@@ -5,7 +5,7 @@ description: >
   uv, layout src/, tipado estático, Pydantic v2, ruff + ty, docstrings
   Google style y elección de framework. Úsalo antes de escribir o modificar
   cualquier fichero .py — en el paso 4.1 del ciclo SDD junto a
-  /speckit.implement, y en cualquier edición de código fuera del ciclo.
+  /speckit-implement, y en cualquier edición de código fuera del ciclo.
 ---
 
 # Convenciones de código Python
@@ -22,7 +22,9 @@ Los tests tienen su propia skill: `dev-python-testing`.
 - Versión de Python: ver **Python → Versión** en el perfil del proyecto.
 - Gestor de paquetes y entornos: **uv**. No uses pip/venv/poetry/pipenv salvo justificación explícita
   y declarada en la respuesta.
-- Layout de proyecto: **src layout** (PEP 621), obligatorio salvo scripts de un solo fichero:
+- Layout de proyecto: **src layout**, obligatorio salvo scripts de un solo fichero. Evita que los
+  tests importen el paquete desde el directorio de trabajo en vez de desde el instalado, que es la
+  causa clásica de "en local pasa y en CI no". Los metadatos van en `pyproject.toml` (PEP 621):
 
 ```
 [nombre-proyecto]/

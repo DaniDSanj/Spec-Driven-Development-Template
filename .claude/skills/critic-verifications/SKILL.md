@@ -5,7 +5,7 @@ description: >
   converger: qué tareas exigen UAT humana, cuáles se han cerrado sin
   evidencia objetiva, y si la clasificación automatizable/manual de
   quickstart_agent.md es correcta. Úsalo en el paso 4.4 del ciclo SDD,
-  después de /verify-validate y antes de /speckit.converge.
+  después de /verify-validate y antes de /speckit-converge.
 context: fork
 agent: spec-critic
 background: false
@@ -20,7 +20,7 @@ feature por cerrada; tú compruebas lo que esa validación no cubre.
 Las skills `verify-prepare` y `verify-validate` *ejecutan* escenarios y anotan su resultado en
 `quickstart_agent.md`. Tú **no ejecutas nada y no escribes en ningún fichero**, tampoco en
 `quickstart_agent.md`. Auditas que la *clasificación* y el *criterio de cierre* sean correctos, y
-reportas. Por eso este paso va después de `/verify-validate` y antes de `/speckit.converge`.
+reportas. Por eso este paso va después de `/verify-validate` y antes de `/speckit-converge`.
 
 ## Qué exige UAT humana
 
@@ -31,7 +31,7 @@ Una tarea no se puede cerrar solo con validación automática si cae en alguno d
 - Cualquier migración de base de datos que toque datos ya existentes en producción.
 
 Para el resto de tareas (backend puro, scripts, utilidades internas sin superficie de usuario) la
-validación automática sí basta para cerrar, siempre que `/speckit.analyze` no haya dejado hallazgos
+validación automática sí basta para cerrar, siempre que `/speckit-analyze` no haya dejado hallazgos
 pendientes.
 
 ## Los tres puntos de auditoría
@@ -64,6 +64,6 @@ probar exactamente, en qué entorno, con qué datos de prueba y qué resultado s
 
 ## Al terminar
 
-Cierra con las preguntas concretas que el humano debe responder antes de `/speckit.converge`, como
+Cierra con las preguntas concretas que el humano debe responder antes de `/speckit-converge`, como
 exige el motor. Recuerda en una línea la regla dura: ninguna tarea con UAT pendiente se marca como
 "Done" en `tasks.md` sin confirmación explícita del humano.

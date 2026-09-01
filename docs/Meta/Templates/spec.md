@@ -7,8 +7,8 @@ fecha: <% tp.date.now("YYYY-MM-DD") %>
 
 # Spec: <% tp.file.title %>
 
-> Espejo human-readable de `specs/<% tp.file.title %>/spec.md`. Se actualiza tras `/speckit.specify` +
-> `/speckit.clarify`; no sustituye al fichero fuente que gestiona Spec-Kit.
+> Espejo human-readable de `specs/<% tp.file.title %>/spec.md`. Se actualiza tras `/speckit-specify` +
+> `/speckit-clarify`; no sustituye al fichero fuente que gestiona Spec-Kit.
 
 ## Resumen
 <% tp.system.prompt("Descripción breve de la feature") %>

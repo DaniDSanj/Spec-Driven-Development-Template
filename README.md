@@ -11,20 +11,21 @@ Esta carpeta es una **plantilla de arranque** para iniciar cualquier proyecto nu
 > **Este `README.md` es documentación de la propia plantilla, no de tu proyecto.** Una vez completada
 > la puesta en marcha (todos los pasos de este documento), puedes borrarlo o sustituirlo por el README
 > real de tu proyecto — igual que `CLAUDE.md` se sobrescribe intencionadamente en el paso
-> ["Generar CLAUDE.md"](#23-generar-claudemd).
+> ["Generar CLAUDE.md"](#23-generar-claudemd). Lo mismo aplica a `bootstrap.ps1`,
+> `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md`; `LICENSE` no se borra, se sustituye.
 
 ## Índice
 
-1. [Primeros pasos](#primeros-pasos)
-2. [Instalación de Spec-Kit](#1-instalación-de-spec-kit)
-3. [Configuración del harness](#2-configuración-del-harness-una-vez-por-proyecto)
-4. [Instalación de skills, subagentes y hooks](#instalación-de-skills-subagentes-y-hooks)
-5. [Estructura de la plantilla](#estructura-de-la-plantilla)
-6. [Principio rector de toda la plantilla](#principio-rector-de-toda-la-plantilla)
+- [Primeros pasos](#primeros-pasos)
+- [1. Instalación de Spec-Kit](#1-instalación-de-spec-kit)
+- [2. Configuración del harness](#2-configuración-del-harness-una-vez-por-proyecto)
+- [Instalación de skills, subagentes y hooks](#instalación-de-skills-subagentes-y-hooks)
+- [Estructura de la plantilla](#estructura-de-la-plantilla)
+- [Principio rector de toda la plantilla](#principio-rector-de-toda-la-plantilla)
 
 ## Primeros Pasos
 
-Este repositorio es una **GitHub Template Repository**: no se clona ni se copia a mano, se usa como origen para generar un repositorio nuevo, que nace ya con todo el árbol de la plantilla (`.claude/`, `.specify/memory/`, `docs/`, `.github/workflows/ci.yml`) en su ruta final. Para poder utilizar esta plantilla, sigue estas indicaciones:
+Este repositorio es una **GitHub Template Repository**: no se clona ni se copia a mano, se usa como origen para generar un repositorio nuevo, que nace ya con todo el árbol de la plantilla (`.claude/`, `.specify/memory/`, `docs/`, `.githooks/`, `.github/workflows/ci.yml`, `.gitignore`, `.gitattributes`, `LICENSE`) en su ruta final. Para poder utilizar esta plantilla, sigue estas indicaciones:
 
 0. Crea el repositorio del proyecto desde esta plantilla: botón **"Use this template"** en la página de este repo en GitHub, o `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`. Clónalo localmente si no usaste `--clone`.
 1. Ejecuta `specify init` en el repo ya creado siguiendo la sección [**Instalación de Spec-Kit**](#1-instalación-de-spec-kit).
@@ -56,6 +57,17 @@ Esta sección asume que ya creaste el repositorio del proyecto a partir de la pl
 
 ### Prerrequisitos (una sola vez por máquina)
 
+| Herramienta | Obligatoria | Para qué |
+|---|---|---|
+| `git` | Sí | Todo el flujo |
+| `uv` | Sí | Gestor de Python y de entornos; lo usan los hooks y el CI |
+| `specify` | Sí | El CLI de Spec-Kit |
+| `bash` | Sí | `.claude/settings.json` invoca con `bash` los cuatro hooks de `.claude/hooks/`. En Windows viene con **Git Bash** (Git for Windows); en WSL/Linux/macOS ya está |
+| `jq` | Sí | Los hooks leen su entrada JSON con `jq`. Los dos guards de `PreToolUse` son *fail-closed*: sin `jq` **bloquean toda escritura** en vez de dejarla pasar en silencio |
+| **Claude Code ≥ v2.1.218** | Sí | Las skills forkeadas de esta plantilla usan `background: false` en su frontmatter, que se introdujo en esa versión |
+| `pwsh` (PowerShell 7+) | Solo para `bootstrap.ps1` | El script lo declara con `#Requires -Version 7.0`. Windows PowerShell 5.1 no vale |
+| `gh` (GitHub CLI) | Solo para `bootstrap.ps1 -SetupGitHub` y la skill `git-run-actions` | Rama `dev`, branch protection, Project y lectura del estado del CI |
+
 ```bash
 # uv (gestor de Python recomendado; también instala Python si falta)
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -63,16 +75,27 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Instala el CLI de Spec-Kit como herramienta global de uv
 uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
 
+# jq (lo usan los cuatro hooks para leer el JSON de entrada)
+winget install jqlang.jq        # Windows
+sudo apt install jq             # Linux
+brew install jq                 # macOS
+
 # Verifica prerrequisitos del sistema (git, versión de Python, agente detectado, etc.)
 specify check
 ```
 
-⚠️**IMPORTANTE**: Los nombres exactos de flags (`--ai`, `--integration`, etc.) han cambiado entre versiones de Spec-Kit. Antes de copiar los comandos de abajo literalmente, confírmalos con:
+⚠️ **IMPORTANTE — verificado contra Spec-Kit `0.14.2`.** Entre versiones de Spec-Kit han cambiado tanto los flags (`--ai` pasó a `--integration`) como **el nombre y la ubicación de los comandos**: hasta la 0.13 eran ficheros en `.claude/commands/` invocados como `/speckit.plan` (con punto); desde la 0.14 son *skills* en `.claude/skills/speckit-*/` invocadas como `/speckit-plan` (**con guion**). Toda esta plantilla usa la forma con guion.
+
+Antes de copiar nada literalmente, confirma qué instaló tu versión:
 
 ```bash
+specify --version
 specify init --help
 specify integration list
+ls .claude/skills/          # tras el init: speckit-specify, speckit-plan, … (o .claude/commands/ en versiones antiguas)
 ```
+
+Si tu versión usa la forma con punto, la traducción es mecánica: `/speckit-plan` → `/speckit.plan`, y así con todos.
 
 Elige tu situación respondiendo a estas dos preguntas independientes — combina la respuesta de la 1 con la de la 2 en un único comando `specify init`.
 
@@ -103,7 +126,9 @@ Los comandos de arriba ya incluyen `--integration claude`; este flag es el que d
 
 #### Claude Code (`--integration claude`)
 
-Esto instala los slash commands (`/speckit.constitution`, `/speckit.specify`, `/speckit.clarify`, `/speckit.plan`, `/speckit.checklist`, `/speckit.tasks`, `/speckit.analyze`, `/speckit.implement`, `/speckit.converge`, `/speckit.taskstoissues`) en `.claude/commands/`, de forma que Claude Code los reconoce automáticamente al abrir el proyecto. No necesitas configurar nada adicional: abre `claude` dentro de la carpeta y escribe `/speckit.` para ver el autocompletado.
+Esto instala los diez comandos del ciclo (`/speckit-constitution`, `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`, `/speckit-checklist`, `/speckit-tasks`, `/speckit-analyze`, `/speckit-implement`, `/speckit-converge`, `/speckit-taskstoissues`) como skills en **`.claude/skills/speckit-*/`**, junto a las que ya trae esta plantilla — no colisionan, los nombres son distintos. Claude Code los reconoce automáticamente al abrir el proyecto: no hay que configurar nada. Abre `claude` dentro de la carpeta y escribe `/speckit-` para ver el autocompletado.
+
+> Al terminar, `specify init` sugiere "considera añadir `.claude/` a `.gitignore`". **En esta plantilla, no lo hagas**: `.claude/` es el harness compartido (skills, subagentes, hooks, perfil del proyecto) y tiene que viajar en el repo — es lo que hace que cualquiera que clone herede el mismo comportamiento del asistente. Lo que sí conviene ignorar es `.claude/settings.local.json`, que ya está en el `.gitignore` de la plantilla.
 
 #### Cualquier otro asistente
 
@@ -116,14 +141,14 @@ specify init --here --integration copilot # Caso A: carpeta ya existente
 specify init mi-proyecto --integration cursor # Caso B: Spec-Kit crea la carpeta
 ```
 
-Spec-Kit soporta más de 30 agentes con la misma mecánica (`--integration gemini`, `--integration codex`, etc.): cambia el destino de los comandos slash (`.cursor/commands/`, `.github/copilot/`, etc.) pero el flujo de fases (`constitution → specify → clarify → plan → checklist → tasks → analyze → implement → converge`) es idéntico. Si en el futuro alternas de agente en el mismo proyecto, puedes volver a ejecutar `specify init --here --integration <otro-agente>` para añadir los comandos del nuevo agente sin perder `.specify/` ni `specs/`.
+Spec-Kit soporta más de 30 agentes con la misma mecánica (`--integration gemini`, `--integration codex`, etc.): cambia el destino de los comandos (`.cursor/`, `.github/copilot/`, etc.) pero el flujo de fases (`constitution → specify → clarify → plan → checklist → tasks → analyze → implement → converge`) es idéntico. Si en el futuro alternas de agente en el mismo proyecto, puedes volver a ejecutar `specify init --here --integration <otro-agente>` para añadir los comandos del nuevo agente sin perder `.specify/` ni `specs/`.
 
 ### 1.3 Verificación tras la instalación
 
 ```bash
-ls .specify/memory/ # data-model.md, db_ideas.md (ya en la plantilla) + constitution.md (nuevo, vacío hasta el primer /speckit.constitution)
-ls specs/ # vacío hasta la primera feature
-ls .claude/commands/ # (o la carpeta equivalente de tu agente)
+ls .specify/memory/          # data-model.md, db_ideas.md (ya en la plantilla) + constitution.md (nuevo, vacío hasta el primer /speckit-constitution)
+ls specs/                    # vacío hasta la primera feature
+ls .claude/skills/           # las 19 de la plantilla + las 10 speckit-* recién instaladas
 ```
 
 Si algo falta, repite `specify check` — es idempotente y no rompe nada si vuelves a ejecutar `init`.
@@ -142,26 +167,24 @@ Al haber creado el repo con "Use this template", estas rutas ya existen — no h
 
 ```bash
 ls .claude/context/       # 00_perfil_proyecto.md
-ls .claude/skills/        # critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, docs-adr-writer, docs-vault-sync, docs-changelog, docs-runbook, docs-consistency-check, git-update-repo, git-close-feature, git-run-actions, verify-prepare, verify-validate
+ls .claude/skills/        # las 19 de la plantilla (critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, docs-adr-writer, docs-vault-sync, docs-changelog, docs-runbook, docs-consistency-check, git-update-repo, git-close-feature, git-run-actions, verify-prepare, verify-validate) + las 10 speckit-* que añadió specify init
 ls .claude/agents/        # docs-manager.md, spec-critic.md, security-reviewer.md, database-manager.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
+ls .githooks/             # pre-push (red local opcional, ver más abajo)
 ls .specify/memory/       # data-model.md, db_ideas.md (+ constitution.md tras specify init)
 ls docs/                  # Specs/, ADR/records/, Data-Model/, Runbooks/, Changelog/, Meta/
 ls .github/workflows/     # ci.yml
+ls .gitignore .gitattributes LICENSE
 ```
 
 Si falta alguna, el repo no se creó correctamente desde la plantilla — vuelve a generarlo con "Use this template" en vez de copiar ficheros a mano.
 
-Verifica que `jq` está instalado en tu sistema (lo usan los scripts de hooks para leer el JSON de entrada):
-```bash
-winget install jqlang.jq        # Para Windows
-sudo apt install jq             # Para Linux
-brew install jq                 # Para MacOS
-```
+No hace falta `chmod +x` sobre los hooks: `settings.json` los invoca como `bash "<ruta>"`, así que el bit de ejecución es irrelevante. Los finales de línea sí importan, y de eso se encarga `.gitattributes` (`*.sh text eol=lf`), para que `bash` no falle con `$'\r': command not found` al clonar en Windows.
 
-En sistemas Unix, asegúrate de que los hooks son ejecutables (Windows no lo necesita):
+Opcionalmente, activa la red local que corre lint, formato, tipado y tests **antes** de cada `push` (ahorra minutos de GitHub Actions y un ciclo de espera):
+
 ```bash
-chmod +x .claude/hooks/*.sh
+git config core.hooksPath .githooks
 ```
 
 ### 2.2 Rellenar el perfil del proyecto
@@ -190,7 +213,7 @@ Abre `claude` dentro del proyecto y pega el prompt de [**01_init_project**](./.c
 ### 2.4 Configurar Obsidian
 
 1. Abre `docs/` como vault de Obsidian.
-2. Sigue [**docs/Meta/Setup.md**](./docs/Meta/Setup.md) para instalar y configurar los plugins comunitarios (Dataview, Templater, obsidian-git, Kanban/Tasks, Excalidraw).
+2. Sigue [**docs/Meta/Setup.md**](./docs/Meta/Setup.md) para instalar y configurar los plugins comunitarios (Dataview, Templater y obsidian-git son imprescindibles; Tasks, Excalidraw y DBML Visualizer, opcionales).
 3. Revisa [**docs/Meta/Workflow.md**](./docs/Meta/Workflow.md) para el flujo de trabajo diario con el vault.
 4. La estructura de carpetas (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/Templates/`) y las plantillas Templater ya vienen creadas — no hay nada que montar.
 
@@ -218,7 +241,7 @@ Qué hacer si el repo es privado y el consumo se acerca al límite lo cubre la s
 
 #### GitHub Project: pasos web (una vez por proyecto)
 
-El tablero agrupa los Issues que genera `/speckit.taskstoissues` — no crees issues a mano si Spec-Kit
+El tablero agrupa los Issues que genera `/speckit-taskstoissues` — no crees issues a mano si Spec-Kit
 ya los genera, para no duplicar la fuente de verdad.
 
 1. En el repo → pestaña **Projects** → **New project** → plantilla **Board** (Kanban).
@@ -229,7 +252,7 @@ ya los genera, para no duplicar la fuente de verdad.
    - **Item reopened** → Status: `Todo`
    - **Item closed** → Status: `Done`
    - **Pull request merged** → Status: `Done`
-   - **Auto-add to project**: filtro `is:issue` (o `is:issue,pr`) sobre el repositorio, para que los issues generados por `/speckit.taskstoissues` entren solos al tablero.
+   - **Auto-add to project**: filtro `is:issue` (o `is:issue,pr`) sobre el repositorio, para que los issues generados por `/speckit-taskstoissues` entren solos al tablero.
 
 El Workflow "Pull request merged" es el que cierra los issues, y solo se dispara con `Closes #N` en la
 descripción de la PR (ver la skill `git-close-feature`).
@@ -247,12 +270,19 @@ descripción de la PR (ver la skill `git-close-feature`).
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes (es el único fichero de contexto que hay).
-- [ ] `.specify/memory/data-model.md` presente (`db_ideas.md` es opcional y mantiene corchetes de
-      plantilla a propósito, no cuenta para este punto).
+- [ ] `bash`, `jq` y `uv` en el `PATH` (sin `jq` los guards bloquean toda escritura: son *fail-closed*).
+- [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes. **Es el único fichero
+      del repo que hay que rellenar**: ni `docs/Meta/`, ni las skills, ni los prompts llevan placeholders.
+- [ ] `.specify/memory/data-model.md` con las entidades reales, o vaciado si el proyecto aún no tiene
+      ninguna tabla — lo que trae la plantilla es un ejemplo. (`db_ideas.md` es una bandeja de entrada
+      vacía y mantiene los corchetes de plantilla a propósito: no cuenta para este punto.)
 - [ ] `CLAUDE.md` generado y revisado a mano (sobrescribe el de la plantilla).
 - [ ] Vault de Obsidian con los plugins comunitarios instalados.
 - [ ] Repo GitHub con rama `dev`, CI y branch protection en `dev` y `main` configurados.
+- [ ] *(opcional)* Red local activada: `git config core.hooksPath .githooks`.
+- [ ] Documentación de la plantilla retirada o sustituida: `README.md`, `bootstrap.ps1`,
+      `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md`. `LICENSE` **revísalo**: hereda la MIT
+      de la plantilla y probablemente quieras otra para tu proyecto.
 
 Con esto, el harness está listo y puedes empezar el primer ciclo SDD con [**02_spec_development**](./.claude/prompts/02_spec_development.md) (proyecto nuevo: entra directamente por el paso 1.0 y sáltate la Fase 0).
 
@@ -276,25 +306,25 @@ Regla de decisión rápida para elegir el mecanismo correcto:
 Todas las skills son solo **recomendaciones** para este stack en concreto y ya vienen incluidas en `.claude/skills/` al crear el repo desde esta plantilla — no hay que instalarlas:
 
 ##### `critic-requirements`
-Audita una petición de feature contra las 10 categorías de ambigüedad **antes** de escribir la spec, y devuelve el prompt aumentado listo para pegar en `/speckit.specify` más la lista de huecos de alcance que hay que cerrar primero, ordenada por impacto. Se usa en el paso 1.1 del ciclo. Se apoya en el subagente `spec-critic`.
+Audita una petición de feature contra las 10 categorías de ambigüedad **antes** de escribir la spec, y devuelve el prompt aumentado listo para pegar en `/speckit-specify` más la lista de huecos de alcance que hay que cerrar primero, ordenada por impacto. Se usa en el paso 1.1 del ciclo. Se apoya en el subagente `spec-critic`.
 
 ##### `critic-plan`
-Revisión adversarial de `spec.md`/`plan.md`/`tasks.md` en contexto limpio, con los cinco ejes (supuestos, consistencia cruzada, ambigüedades, riesgos y modos de fallo, sobre-ingeniería). Devuelve el listado completo de hallazgos y un veredicto GO/NO-GO; ante NO-GO indica a qué paso del ciclo hay que volver. Se usa en el paso 2.8, obligatoriamente antes de `/speckit.implement`. Se apoya en el subagente `spec-critic`.
+Revisión adversarial de `spec.md`/`plan.md`/`tasks.md` en contexto limpio, con los cinco ejes (supuestos, consistencia cruzada, ambigüedades, riesgos y modos de fallo, sobre-ingeniería). Devuelve el listado completo de hallazgos y un veredicto GO/NO-GO; ante NO-GO indica a qué paso del ciclo hay que volver. Se usa en el paso 2.8, obligatoriamente antes de `/speckit-implement`. Se apoya en el subagente `spec-critic`.
 
 ##### `critic-verifications`
 Audita el criterio de cierre antes de converger: qué tareas exigen UAT humana, cuáles se han cerrado sin evidencia objetiva, y si la clasificación `automatizable`/`manual` de `quickstart_agent.md` es correcta. No ejecuta ni escribe nada — esa es la frontera con `verify-validate`. Se usa en el paso 4.4. Se apoya en el subagente `spec-critic`.
 
 ##### `dev-python-coding`
-Convenciones de escritura de código Python (gestión con `uv`, layout `src/`, tipado estático con genéricos built-in y PEP 695, Pydantic v2, ruff + `ty`, docstrings Google style, criterios de elección de framework). Lee la versión de Python y el framework del perfil del proyecto. Se carga en el paso 4.1, justo antes de `/speckit.implement`, y en cualquier edición de un `.py` fuera del ciclo. **Es una skill plana**: no forkea a ningún subagente, porque el código se escribe en el hilo principal, que es el que tiene `spec.md`/`plan.md`/`tasks.md` y el bucle de corrección del paso 4.3.
+Convenciones de escritura de código Python (gestión con `uv`, layout `src/`, tipado estático con genéricos built-in y PEP 695, Pydantic v2, ruff + `ty`, docstrings Google style, criterios de elección de framework). Lee la versión de Python y el framework del perfil del proyecto. Se carga en el paso 4.1, justo antes de `/speckit-implement`, y en cualquier edición de un `.py` fuera del ciclo. **Es una skill plana**: no forkea a ningún subagente, porque el código se escribe en el hilo principal, que es el que tiene `spec.md`/`plan.md`/`tasks.md` y el bucle de corrección del paso 4.3.
 
 ##### `dev-python-testing`
 Convenciones de testing (pytest, `tests/` como espejo de `src/[paquete]/`, mockeo obligatorio de conexiones a BD y de todo lo externo, cobertura mínima del perfil) y la regla dura de que ningún endpoint o función de negocio se cierra en `tasks.md` sin al menos un test. Se carga junto a `dev-python-coding` en el paso 4.1, y es plana por el mismo motivo.
 
 ##### `db-model-conventions`
-Convenciones de esquema (motor, naming, campos de auditoría obligatorios con su trigger, política de índices, regla de migraciones y anexo de cuándo introducir NoSQL), válidas tanto para PostgreSQL como para SQL Server. Lee del perfil del proyecto el motor, la versión, la convención de PK, el uso de schemas y la herramienta de migraciones. Se carga en el paso 2.1, justo antes de `/speckit.plan`, y sigue en contexto para el 4.1. **Es una skill plana**: `/speckit.plan` es un comando de Spec-Kit cuyo interior no controlamos y es él quien genera `data-model.md`, así que la única forma determinista de que lo genere bien es tener las convenciones puestas cuando arranca.
+Convenciones de esquema (motor, naming, campos de auditoría obligatorios con su trigger, política de índices, regla de migraciones y anexo de cuándo introducir NoSQL), válidas tanto para PostgreSQL como para SQL Server. Lee del perfil del proyecto el motor, la versión, la convención de PK, el uso de schemas y la herramienta de migraciones. Se carga en el paso 2.1, justo antes de `/speckit-plan`, y sigue en contexto para el 4.1. **Es una skill plana**: `/speckit-plan` es un comando de Spec-Kit cuyo interior no controlamos y es él quien genera `data-model.md`, así que la única forma determinista de que lo genere bien es tener las convenciones puestas cuando arranca.
 
 ##### `db-model-ideas`
-Recoge el boceto humano de tablas de la feature en `specs/<feature>/db_ideas.md`, con la plantilla de bloque por tabla y la regla de que es un punto de partida, nunca una fuente de verdad. Se usa en el paso 1.4. El boceto es por feature a propósito: dos features en ramas paralelas no se pisan el fichero, y `/speckit.plan` no arrastra al contexto tablas ajenas. También plana.
+Recoge el boceto humano de tablas de la feature en `specs/<feature>/db_ideas.md`, con la plantilla de bloque por tabla y la regla de que es un punto de partida, nunca una fuente de verdad. Se usa en el paso 1.4. El boceto es por feature a propósito: dos features en ramas paralelas no se pisan el fichero, y `/speckit-plan` no arrastra al contexto tablas ajenas. También plana.
 
 ##### `db-model-protocol`
 Diseña el esquema de la feature y lo reconcilia contra el modelo canónico en contexto limpio: reutilización antes que creación, análisis de impacto sobre cada spec dependiente, y prioridad de la spec nueva sobre la antigua. Entrega DDL, `erDiagram` Mermaid y la tabla de specs afectadas, y **no aplica nada** — espera aprobación humana explícita. Se usa en el paso 2.2. Se apoya en el subagente `database-manager`.
@@ -303,7 +333,7 @@ Diseña el esquema de la feature y lo reconcilia contra el modelo canónico en c
 Tras la aprobación explícita del esquema, entrega el comando exacto de la herramienta de migraciones y el DDL revisado —**nunca escribe el fichero de migración**, que el hook bloquea a propósito— y actualiza `.specify/memory/data-model.md` (entidad + changelog), el `data-model.md` local de la spec y las readaptaciones aprobadas. Se usa en el paso 4.2. Se apoya en el subagente `database-manager`.
 
 ##### `docs-adr-writer`
-Redacta un ADR: ruta y numeración correlativa en `docs/ADR/records/`, formato Nygard (Contexto · Decisión · Consecuencias), regla append-only con `supersede:` en el ADR nuevo, criterio de qué decisión merece ADR y cuál no, y el índice Dataview de `docs/ADR/Overview.md`. Se usa en el paso 2.4 —el mismo día de la decisión, antes de `/speckit.tasks`— y en el 5.3 para lo que quedara suelto. Se apoya en el subagente `docs-manager`.
+Redacta un ADR: ruta y numeración correlativa en `docs/ADR/records/`, formato Nygard (Contexto · Decisión · Consecuencias), regla append-only con `supersede:` en el ADR nuevo, criterio de qué decisión merece ADR y cuál no, y el índice Dataview de `docs/ADR/Overview.md`. Se usa en el paso 2.4 —el mismo día de la decisión, antes de `/speckit-tasks`— y en el 5.3 para lo que quedara suelto. Se apoya en el subagente `docs-manager`.
 
 ##### `docs-vault-sync`
 Decide **qué** nota del vault toca cada evento del ciclo (`data-model.md` → `docs/Data-Model/[feature]-ER.md`; converge → `docs/Specs/[feature].md` y el espejo del changelog), con `docs/Meta/Overview.md` como precondición y wikilinks cruzados Spec ↔ ADR ↔ Issue ↔ Runbook. El formato de ADR, runbook y changelog lo delega en sus skills, para que no haya dos fuentes de verdad. Se usa en los pasos 2.3 y 5.3. Se apoya en el subagente `docs-manager`.
@@ -324,13 +354,13 @@ Convenciones de Git y GitHub: modelo de ramas (`main` desplegable, `dev` de inte
 El cierre en GitHub: commit, `push` de la rama y PR hacia `dev` con un **`Closes #N` repetido por cada issue** (nunca una lista con comas — GitHub solo cierra la referencia inmediatamente posterior a `Closes`), y la frontera dura de que el asistente propone activamente la PR `feature/* → dev` pero **nunca** abre la PR `dev → main`, que es del humano igual que el merge. Se usa en el paso 5.6. También plana: redactar el commit y el cuerpo de la PR exige saber qué se implementó y qué issues cubre, justo lo que un contexto limpio no tiene, y `push`/`gh pr create` son acciones irreversibles hacia fuera.
 
 ##### `git-run-actions`
-Supervisión del CI de la PR: leer el estado del check `quality` (`gh pr checks`, `gh run view --log-failed`), diagnosticar cuál de los cuatro pasos del job falla (`ruff check` / `ruff format --check` / `ty check` / `pytest`) y proponer la corrección, más el coste de minutos de Actions según la visibilidad del repo y la red local `pre-push`. **No edita `ci.yml`**: es estático y gateado por `pyproject.toml` a propósito, y parchearlo para que un check pase silencia un fallo real. Se usa en el paso 5.7. Plana: diagnosticar el rojo exige ver el código recién escrito, y la corrección la aplica el mismo hilo.
+Supervisión del CI de la PR: leer el estado del check `quality` (`gh pr checks`, `gh run view --log-failed`), diagnosticar cuál de los cuatro pasos del job falla (`ruff check` / `ruff format --check` / `ty check` / `pytest`) y proponer la corrección, más el coste de minutos de Actions según la visibilidad del repo y la red local `.githooks/pre-push`. **No edita `ci.yml`**: es estático y gateado por `pyproject.toml` + `src/` a propósito, y parchearlo para que un check pase silencia un fallo real. Se usa en el paso 5.7. Plana: diagnosticar el rojo exige ver el código recién escrito, y la corrección la aplica el mismo hilo.
 
 ##### `verify-prepare`
 Traduce `specs/<feature>/quickstart.md` (prosa) a `specs/<feature>/quickstart_agent.md`, un formato estructurado que clasifica cada escenario como `automatizable` o `manual` y lo mapea a su `FR-XXX`/`US-X` de `spec.md`. Se usa tras el GO del subagente `spec-critic`, o cuando `quickstart.md` cambia y `quickstart_agent.md` queda desactualizado (fusión idempotente: conserva el resultado de los escenarios sin cambios). Se apoya en el subagente `spec-verifier`.
 
 ##### `verify-validate`
-Ejecuta los escenarios `automatizable` de `quickstart_agent.md` de la feature activa y anota en ese mismo fichero el resultado de cada uno (✅ REALIZADA / ❌ ERRÓNEA / ⏳ PENDIENTE / 🚫 INALCANZABLE), con evidencia objetiva. Nunca corrige el proyecto ni edita otro fichero. Se usa tras `/speckit.implement`, y de nuevo tras cada corrección, hasta que no queden ERRÓNEAS ni INALCANZABLES. Se apoya en el subagente `spec-verifier`.
+Ejecuta los escenarios `automatizable` de `quickstart_agent.md` de la feature activa y anota en ese mismo fichero el resultado de cada uno (✅ REALIZADA / ❌ ERRÓNEA / ⏳ PENDIENTE / 🚫 INALCANZABLE), con evidencia objetiva. Nunca corrige el proyecto ni edita otro fichero. Se usa tras `/speckit-implement`, y de nuevo tras cada corrección, hasta que no queden ERRÓNEAS ni INALCANZABLES. Se apoya en el subagente `spec-verifier`.
 
 Puedes añadir más según crezca el proyecto (ej. `fastapi-endpoint-scaffold`, `pytest-fixtures`), pero empieza solo con estas — más skills de las que realmente usas solo añaden ruido a la carga inicial.
 
@@ -348,7 +378,7 @@ Motor de base de datos compartido por las skills `db-model-protocol` y `db-model
 Motor de documentación compartido por las skills `docs-adr-writer`, `docs-vault-sync` y `docs-runbook`. Contexto limpio: ve los ficheros de la feature y el vault, no el histórico de la conversación. No tiene `Bash` (`tools: Read, Grep, Glob, Write, Edit`): escribe borradores pero no commitea, no edita un ADR ya aceptado y no inventa contenido que no esté en `spec.md`/`plan.md`/los commits.
 
 ##### `security-reviewer`
-Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/`.env`, migraciones, entradas no confiables) antes de `/speckit.converge`, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook `pre_edit_guard_sensitive.sh` (que bloquea la escritura) revisando la lógica una vez escrita.
+Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/`.env`, migraciones, entradas no confiables) antes de `/speckit-converge`, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook `pre_edit_guard_sensitive.sh` (que bloquea la escritura) revisando la lógica una vez escrita.
 
 ##### `spec-verifier`
 Motor de ejecución compartido por las skills `verify-prepare` y `verify-validate`. Nunca corrige código de producción, configuración ni tests, y nunca inventa un resultado sin evidencia objetiva; solo puede escribir `quickstart_agent.md` de la feature activa, restricción reforzada por el hook `guard-quickstart-agent.sh` (declarado en su propio frontmatter, no en `.claude/settings.json`, porque solo debe aplicar a sus escrituras, no a toda la sesión).
@@ -357,12 +387,16 @@ Motor de ejecución compartido por las skills `verify-prepare` y `verify-validat
 
 Todos los hooks son solo **recomendaciones** para este stack en concreto y ya vienen incluidos en `.claude/settings.json` al crear el repo desde esta plantilla — no hay que instalarlos:
 
-1. **PostToolUse en `Edit`/`Write` sobre `*.py`** → `ruff format` + `ruff check --fix` + `ty check` automáticos.
-2. **Stop** → `uv run pytest -q`; si falla, Claude ve el resultado antes de dar la tarea por cerrada.
-3. **PreToolUse en `Write`/`Edit`/`Bash` sobre `migrations/**` o `.env*`** → bloquea la escritura (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). El humano decide manualmente si aplica el cambio por otra vía. Cubre `Bash` además de `Write`/`Edit` porque si no, un `alembic revision`, un `sed -i` o un `echo >` lo rodearían y la red de seguridad sería decorativa. Dos compromisos deliberados: para `migrations/` bloquea cualquier comando que mencione la ruta, lectura incluida (leer una migración se hace con las herramientas `Read`/`Grep`, que no pasan por el hook); para `.env` bloquea solo cuando es destino de escritura, para no romper usos legítimos como `docker compose --env-file`.
+1. **PostToolUse en `Edit`/`Write` sobre `*.py`** → `ruff format` + `ruff check --fix` + `ty check` automáticos. Falla en abierto: si faltan `jq` o `uv`, no hace nada y la edición sigue. Es una comodidad, no una barrera.
+2. **Stop** → `uv run pytest -q`; si falla, Claude ve el resultado antes de dar la tarea por cerrada. Gateado por `pyproject.toml` + `src/`, igual que el CI, y con protección de bucle (`stop_hook_active`) para que unos tests que no se consiguen arreglar no reenganchen la sesión indefinidamente.
+3. **PreToolUse en `Write`/`Edit`/`Bash` sobre `migrations/**` o ficheros `.env`** → bloquea la escritura (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). El humano decide manualmente si aplica el cambio por otra vía. Cubre `Bash` además de `Write`/`Edit` porque si no, un `alembic revision`, un `sed -i` o un `echo >` lo rodearían y la red de seguridad sería decorativa. Tres compromisos deliberados: para `migrations/` bloquea cualquier comando que mencione la ruta, lectura incluida (leer una migración se hace con las herramientas `Read`/`Grep`, que no pasan por el hook); para `.env` bloquea solo cuando es destino de escritura, para no romper usos legítimos como `docker compose --env-file`, y deja pasar `.env.example`/`.sample`/`.template`, que son plantillas sin secretos.
 4. **PreToolUse en `Write`/`Edit`, scopeado al subagente `spec-verifier`** (declarado en `.claude/agents/spec-verifier.md`, no en la lista de arriba) → bloquea cualquier escritura suya que no sea `quickstart_agent.md` de la feature activa.
 
-En sistemas Unix, verifica que son ejecutables (Windows no lo necesita): `chmod +x .claude/hooks/*.sh`.
+Los dos guards (3 y 4) son **fail-closed**: si falta `jq`, si el JSON de entrada no se puede interpretar o si no llega `file_path`, **bloquean**. Un `PreToolUse` que sale con un código distinto de 2 es, para Claude Code, un error *no bloqueante*: la acción se permitiría igualmente. Un guard que "falla hacia fuera" sería decorativo justo cuando más falta hace. El precio es que sin `jq` no se puede escribir nada — por eso es prerrequisito obligatorio, y por eso `bootstrap.ps1` se detiene si falta.
+
+Los dos comparan rutas **normalizando el separador**, así que funcionan igual con `H:\proyecto\migrations\001.py` que con `/proyecto/migrations/001.py`. Sus límites conocidos están en [`SECURITY.md`](SECURITY.md): son una red de seguridad, no un sandbox.
+
+Fuera de `.claude/`, la plantilla trae además **`.githooks/pre-push`** (opcional, se activa con `git config core.hooksPath .githooks`): corre las mismas cuatro comprobaciones que el job `quality` del CI antes de cada `push`, para no gastar minutos de Actions en un fallo detectable en local.
 
 ### ¿Cómo añadir herramientas nuevas más adelante?
 
@@ -405,9 +439,13 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
 | `docs/` | Esqueleto del vault de Obsidian (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/` con las guías de setup/workflow y las plantillas de nota) |
-| `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), gateado por la existencia de `pyproject.toml` |
+| `.githooks/pre-push` | Red local opcional: corre las mismas comprobaciones que el CI antes de cada `push`. Se activa con `git config core.hooksPath .githooks` |
+| `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), gateado por la existencia de `pyproject.toml` y `src/` |
+| `.gitignore` | Escrito para este stack: secretos (`.env*`, claves), Python, entornos `uv` (pero **no** `uv.lock`, que se versiona), estado local de Obsidian y `settings.local.json` de Claude Code |
+| `.gitattributes` | Normalización de finales de línea. `*.sh text eol=lf` es lo que evita que los hooks lleguen con CRLF al clonar en Windows y `bash` falle con `$'\r': command not found` |
+| `LICENSE` | MIT. **Revísalo en tu proyecto**: se hereda la licencia de la plantilla, que probablemente no sea la que quieres |
 
-Este `README.md`, `bootstrap.ps1` y `bootstrap_example.md` son documentación **de la propia plantilla** (no de tu proyecto): puedes borrarlos del repo del proyecto una vez completada la puesta en marcha, o dejarlos como referencia.
+Este `README.md`, `bootstrap.ps1`, `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md` son documentación **de la propia plantilla** (no de tu proyecto): puedes borrarlos del repo del proyecto una vez completada la puesta en marcha, o dejarlos como referencia. `LICENSE` no se borra, se sustituye por la que corresponda a tu proyecto.
 
 ## Principio rector de toda la plantilla
 

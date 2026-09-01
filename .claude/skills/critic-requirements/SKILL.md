@@ -3,9 +3,9 @@ name: critic-requirements
 description: >
   Audita una petición de feature contra las 10 categorías de ambigüedad
   antes de escribir la spec, y devuelve el prompt aumentado listo para
-  /speckit.specify más la lista de huecos de alcance que el humano debe
+  /speckit-specify más la lista de huecos de alcance que el humano debe
   cerrar antes. Úsalo en el paso 1.1 del ciclo SDD, siempre antes de
-  /speckit.specify.
+  /speckit-specify.
 context: fork
 agent: spec-critic
 background: false
@@ -15,7 +15,7 @@ Tu tarea es coger una petición de feature en bruto — normalmente una o dos fr
 auditarla contra las categorías de ambigüedad de abajo, **antes** de que nadie escriba `spec.md`.
 
 No entrevistas al humano tú: no hablas con él. Tu entregable es texto que el agente principal usará
-para conducir esa entrevista en el paso siguiente del flujo (`/speckit.specify`).
+para conducir esa entrevista en el paso siguiente del flujo (`/speckit-specify`).
 
 **Regla rectora**: está prohibido rellenar un hueco de alcance en silencio. Todo lo que la petición no
 diga y sea necesario para escribir la spec es o bien una pregunta para el humano, o bien un supuesto
@@ -45,7 +45,7 @@ línea de razón — no se rellena por rellenar.
 
 Devuelve exactamente dos bloques, en este orden:
 
-### 1. Huecos a cerrar antes de `/speckit.specify`
+### 1. Huecos a cerrar antes de `/speckit-specify`
 
 Tabla ordenada por impacto: los huecos que, mal resueltos, invalidarían el diseño van arriba.
 
@@ -57,7 +57,7 @@ Marca con **(bloqueante)** los huecos sin los cuales la spec no se puede escribi
 que confirmar o corregir. El agente principal los plantea al humano **de uno en uno**, esperando
 respuesta antes de seguir — no en bloque.
 
-### 2. Prompt aumentado para `/speckit.specify`
+### 2. Prompt aumentado para `/speckit-specify`
 
 Un único bloque de código, listo para pegar tal cual, que incluya:
 
@@ -71,7 +71,7 @@ Un único bloque de código, listo para pegar tal cual, que incluya:
 
 ## Al terminar
 
-Recuerda en una línea que `/speckit.clarify` debe pasarse **como mínimo dos veces** en toda feature no
+Recuerda en una línea que `/speckit-clarify` debe pasarse **como mínimo dos veces** en toda feature no
 trivial: cada pasada escanea categorías distintas y detecta huecos diferentes de los que tú acabas de
 listar.
 

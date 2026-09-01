@@ -20,7 +20,7 @@ El boceto va en **`specs/<feature>/db_ideas.md`**, junto al resto de artefactos 
 feature a propósito:
 
 - Dos features en curso en ramas paralelas no se pisan el fichero ni chocan al mergear.
-- Cuando el paso [2.1](../../prompts/02_spec_development.md) referencia el boceto, `/speckit.plan` lee
+- Cuando el paso [2.1](../../prompts/02_spec_development.md) referencia el boceto, `/speckit-plan` lee
   solo las tablas de esta feature, no el catálogo entero del proyecto.
 - El fichero muere con la feature: en cuanto el esquema se aprueba, la fuente de verdad pasa a ser
   `.specify/memory/data-model.md`, que sí es transversal. Una feature posterior que reutilice una
@@ -36,7 +36,7 @@ nunca se copia. Así cada tabla tiene un único dueño en todo momento y no hay 
 ## Cómo lo trata el asistente
 
 Este fichero **no se consulta automáticamente**. Se usa exclusivamente cuando el humano lo referencia
-explícitamente dentro del prompt de `/speckit.plan` (p. ej. "ver `db_ideas.md`, tabla `orders`"). Si el
+explícitamente dentro del prompt de `/speckit-plan` (p. ej. "ver `db_ideas.md`, tabla `orders`"). Si el
 prompt no lo menciona, no lo consultes.
 
 Cuando sí se referencia, es un **punto de partida, no una fuente de verdad**: aplica sobre él las

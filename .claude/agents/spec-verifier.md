@@ -7,7 +7,7 @@ description: >
   No modifica código de producción ni ningún fichero que no sea
   quickstart_agent.md, y nunca intenta corregir lo que encuentra roto.
 tools: Read, Grep, Glob, Bash, Write, Edit
-model: sonnet
+model: inherit
 permissionMode: default
 color: orange
 hooks:

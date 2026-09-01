@@ -1,26 +1,28 @@
 # Cómo trabajar con Obsidian en este proyecto
 
-> Guarda esta nota como `@docs/Meta/Workflow.md`. Es la referencia de "cómo documentamos aquí" — la
-> leen el subagente `docs-manager` y sus skills `docs-*` para saber la estructura del vault y qué
-> plantilla usa cada artefacto.
+> Esta nota (`docs/Meta/Workflow.md`) es la referencia de "cómo documentamos aquí" — la leen el
+> subagente `docs-manager` y sus skills `docs-*` para saber la estructura del vault y qué plantilla
+> usa cada artefacto.
 
 ## Estructura de carpetas del vault
+
+Los prompts maestros del ciclo SDD **no viven en el vault**: están en `.claude/prompts/`, porque son
+instrucciones para el asistente, no documentación del proyecto.
 
 ```
 docs/
 ├── Meta/
-│   ├── Setup.md                # este documento de configuración
+│   ├── Setup.md                # cómo está montado el vault (plugins y su configuración)
 │   ├── Workflow.md             # este documento
-│   ├── Templates/              # plantillas Templater
+│   ├── Templates/              # plantillas Templater (adr.md, spec.md, runbook.md)
 │   └── Overview.md             # dashboard generado con Dataview (índice de todo lo demás)
-├── Prompts/                    # carpeta de prompts maestros. 
 ├── Specs/                      # una nota por feature, espejo de specs/<feature>/spec.md
 ├── ADR/
 │   ├── records/                # ADR-0001.md, ADR-0002.md...
 │   └── Overview.md             # tabla Dataview con todos los ADR (estado, fecha, enlaces)
 ├── Data-Model/
 │   └── [feature]-ER.md         # una nota por feature; erDiagram Mermaid sincronizado con el
-│                                # data-model.md que /speckit.plan genera para esa feature
+│                                # data-model.md que /speckit-plan genera para esa feature
 ├── Runbooks/                   # procedimientos operativos (deploy, rollback, incidentes)
 └── Changelog/
     └── Changelog.md            # espejo human-readable de CHANGELOG.md del repo
@@ -30,18 +32,19 @@ docs/
 
 | Artefacto | Se crea/actualiza en | Plantilla |
 |---|---|---|
-| Nota de Spec | Tras `/speckit.specify` + `/speckit.clarify` | `@docs/Meta/Templates/spec.md` |
+| Nota de Spec | Tras `/speckit-specify` + `/speckit-clarify` | `@docs/Meta/Templates/spec.md` |
 | ADR | Al tomar una decisión arquitectónica (ver la regla de qué merece ADR en la skill `docs-adr-writer`) | `@docs/Meta/Templates/adr.md` |
-| Diagrama ER | Tras `/speckit.plan` (cuando genera `data-model.md`) | Bloque ` ```mermaid erDiagram ` |
+| Diagrama ER | Tras `/speckit-plan` (cuando genera `data-model.md`) | Bloque ` ```mermaid erDiagram ` |
 | Runbook | Al cerrar una feature que introduce un procedimiento operativo nuevo (deploy especial, rollback, migración) | `@docs/Meta/Templates/runbook.md` |
-| Changelog | En la Fase 2 (cierre) de cada ciclo SDD | Espejo de `CHANGELOG.md` |
+| Changelog | En la Fase 5 (cierre) de cada ciclo SDD, paso 5.4 | Espejo de `CHANGELOG.md` (lo genera la skill `docs-changelog`) |
 | Dashboard (`docs/Meta/Overview.md`) | Bajo demanda, la primera vez que una skill `docs-*` actualiza el vault y el fichero todavía no existe | Query Dataview de esta misma nota (sección más abajo) |
 
 ## Plantillas Templater
 
 Los 3 ficheros (`adr.md`, `spec.md`, `runbook.md`) ya viven en `docs/Meta/Templates/`
-desde que el repo se creó con esta plantilla — no hay que copiarlos. Ejemplo del
-contenido de `@docs/Meta/Templates/adr.md`:
+desde que el repo se creó con esta plantilla — no hay que crearlos ni copiarlos; lo único que hace
+falta es apuntar ahí el *Template folder location* de Templater (ver `Setup.md`). Ejemplo del
+contenido de `docs/Meta/Templates/adr.md`:
 
 ```markdown
 ---

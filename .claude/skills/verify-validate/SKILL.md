@@ -5,7 +5,7 @@ description: >
   para la feature activa y anota el resultado de cada una (REALIZADA,
   ERRÓNEA, PENDIENTE, INALCANZABLE) directamente en ese fichero. Muestra
   además un resumen por consola. No corrige el proyecto ni edita ningún
-  otro fichero. Úsalo después de /speckit.implement, y de nuevo tras cada
+  otro fichero. Úsalo después de /speckit-implement, y de nuevo tras cada
   corrección, hasta que no queden ERRÓNEAS ni INALCANZABLES.
 context: fork
 agent: spec-verifier

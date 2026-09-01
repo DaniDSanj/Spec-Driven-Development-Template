@@ -4,14 +4,14 @@ description: >
   Revisión adversarial de spec.md, plan.md y tasks.md de la feature activa
   en contexto limpio, con veredicto GO/NO-GO y el listado completo de
   hallazgos. Úsalo en el paso 2.8 del ciclo SDD, obligatoriamente antes de
-  /speckit.implement en cualquier feature no trivial.
+  /speckit-implement en cualquier feature no trivial.
 context: fork
 agent: spec-critic
 background: false
 ---
 
 Tu tarea es revisar `spec.md`, `plan.md` y `tasks.md` de la feature activa como revisor adversarial, y
-emitir un veredicto **GO** o **NO-GO** antes de que se ejecute `/speckit.implement`.
+emitir un veredicto **GO** o **NO-GO** antes de que se ejecute `/speckit-implement`.
 
 Recibes solo esos tres ficheros, no el histórico de la conversación de planificación. Eso es
 deliberado: es lo que evita que el sesgo de quien escribió el plan contamine la crítica.
@@ -24,7 +24,7 @@ Recorre los cinco, en este orden:
    más frágiles.
 2. **Consistencia cruzada** — busca incoherencias entre spec, plan y tasks: un requisito sin tarea que
    lo cubra, una tarea sin requisito que la justifique, un dato del plan que contradice la spec.
-3. **Ambigüedades sin resolver** — cualquier punto donde `/speckit.clarify` debería haber preguntado y
+3. **Ambigüedades sin resolver** — cualquier punto donde `/speckit-clarify` debería haber preguntado y
    no lo hizo.
 4. **Riesgos técnicos y modos de fallo** — qué puede romperse en producción, en concurrencia, en el
    límite de escala esperado.
@@ -52,13 +52,13 @@ Severidad: `Bloqueante` (fuerza el NO-GO), `Alta` (hay que resolverlo, no bloque
 
 Por cada hallazgo bloqueante, a qué paso del ciclo hay que volver para resolverlo:
 
-- Hueco de alcance o requisito mal capturado → paso **1.2** (`/speckit.specify`).
-- Decisión técnica, esquema de datos o arquitectura equivocada → paso **2.1** (`/speckit.plan`).
-- Descomposición en tareas incompleta o mal ordenada → paso **2.6** (`/speckit.tasks`).
+- Hueco de alcance o requisito mal capturado → paso **1.2** (`/speckit-specify`).
+- Decisión técnica, esquema de datos o arquitectura equivocada → paso **2.1** (`/speckit-plan`).
+- Descomposición en tareas incompleta o mal ordenada → paso **2.6** (`/speckit-tasks`).
 
 Tras resolverlos, esta revisión se repite entera: un NO-GO no se levanta parcialmente.
 
 ## Al terminar
 
 Cierra con las preguntas concretas que el humano debe responder antes de que se ejecute
-`/speckit.implement`, como exige el motor.
+`/speckit-implement`, como exige el motor.
