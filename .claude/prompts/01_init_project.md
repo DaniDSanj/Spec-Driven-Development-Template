@@ -78,6 +78,8 @@ llevar las convenciones cargadas de antemano.
 | Crear la rama de una feature, o revisar la protección de ramas | `/git-update-repo` |
 | Commitear, pushear y abrir la PR de cierre hacia `dev` | `/git-close-feature` |
 | Comprobar o diagnosticar el CI de una PR | `/git-run-actions` |
+| Traducir `quickstart.md` a `quickstart_agent.md`, o regenerarlo si quedó desactualizado | `/verify-prepare` |
+| Ejecutar las validaciones automatizables de `quickstart_agent.md` | `/verify-validate` |
 
 Al terminar, muéstrame el CLAUDE.md generado y pregúntame si hay algún comando o convención local que
 se te haya escapado antes de darlo por definitivo.
