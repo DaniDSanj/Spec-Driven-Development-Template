@@ -4,7 +4,7 @@ Este fichero da instrucciones a Claude Code (claude.ai/code) para trabajar con e
 
 ## Qué es esta carpeta
 
-Esta carpeta es una **GitHub Template Repository**: el mecanismo de puesta en marcha de un proyecto nuevo es el botón "Use this template" de GitHub (o `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`), no clonar ni copiar ficheros a mano desde aquí. Es la plantilla de **Spec-Driven Development (SDD)** con un stack fijo: Claude Code + GitHub Spec-Kit, Python, PostgreSQL/SQL Server, Obsidian como documentación, GitHub como control de versiones. Aquí no hay nada que compilar, lintar ni testear.
+Esta carpeta es una **GitHub Template Repository**: el mecanismo de puesta en marcha de un proyecto nuevo es el botón "Use this template" de GitHub (o `gh repo create <nombre> --template DaniDSanj/Spec-Driven-Development-Template --clone`), no clonar ni copiar ficheros a mano desde aquí. Es la plantilla de **Spec-Driven Development (SDD)** con un stack fijo: Claude Code + GitHub Spec-Kit, Python, PostgreSQL/SQL Server, Obsidian como documentación, GitHub como control de versiones. Aquí no hay nada que compilar, lintar ni testear.
 
 El repo mezcla dos cosas en la misma raíz:
 - **Documentación de la propia plantilla** (este `CLAUDE.md`, `README.md`, `bootstrap.ps1`, `bootstrap_example.md`, `CONTRIBUTING.md`, `SECURITY.md`): solo tiene sentido mientras se está *editando la plantilla* o poniendo en marcha un proyecto nuevo; es descartable en el proyecto downstream una vez completada la puesta en marcha.

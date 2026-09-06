@@ -1,6 +1,6 @@
 # Ejemplo de bootstrap: Nombre-Proyecto
 
-Supone que ya creaste el repositorio `Nombre-Proyecto` a partir de esta plantilla (botón "Use this template" en GitHub, o `gh repo create Nombre-Proyecto --template <owner>/Spec-Driven-Development-Template --clone`) y lo tienes clonado localmente.
+Supone que ya creaste el repositorio `Nombre-Proyecto` a partir de esta plantilla (botón "Use this template" en GitHub, o `gh repo create Nombre-Proyecto --template DaniDSanj/Spec-Driven-Development-Template --clone`) y lo tienes clonado localmente.
 
 Script de ejemplo, listo para copiar y pegar en **PowerShell 7 (`pwsh`)**, que ejecuta [`bootstrap.ps1`](./bootstrap.ps1) **desde la raíz de ese repositorio ya clonado** (no desde la plantilla). Incluye **todos** los parámetros del script (obligatorios y opcionales) como un hashtable editable, para poder revisarlos y modificarlos antes de lanzarlo.
 

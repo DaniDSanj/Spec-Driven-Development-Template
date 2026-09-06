@@ -27,7 +27,7 @@ Esta carpeta es una **plantilla de arranque** para iniciar cualquier proyecto nu
 
 Este repositorio es una **GitHub Template Repository**: no se clona ni se copia a mano, se usa como origen para generar un repositorio nuevo, que nace ya con todo el árbol de la plantilla (`.claude/`, `.specify/memory/`, `docs/`, `.githooks/`, `.github/workflows/ci.yml`, `.gitignore`, `.gitattributes`, `LICENSE`) en su ruta final. Para poder utilizar esta plantilla, sigue estas indicaciones:
 
-0. Crea el repositorio del proyecto desde esta plantilla: botón **"Use this template"** en la página de este repo en GitHub, o `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`. Clónalo localmente si no usaste `--clone`.
+0. Crea el repositorio del proyecto desde esta plantilla: botón **"Use this template"** en la página de este repo en GitHub, o `gh repo create <nombre> --template DaniDSanj/Spec-Driven-Development-Template --clone`. Clónalo localmente si no usaste `--clone`.
 1. Ejecuta `specify init` en el repo ya creado siguiendo la sección [**Instalación de Spec-Kit**](#1-instalación-de-spec-kit).
 2. Configura el *harness* del proyecto con la sección [**Configuración del harness**](#2-configuración-del-harness-una-vez-por-proyecto).
 3. Cada vez que abras una feature/spec nueva sigue [**02_spec_development**](./.claude/prompts/02_spec_development.md) de arriba abajo: cubre el ciclo completo de la petición al merge (specify → plan → tasks → implementación → UAT → documentación → PR).
@@ -51,7 +51,7 @@ Este repositorio es una **GitHub Template Repository**: no se clona ni se copia 
 
 ## 1. Instalación de Spec-Kit
 
-Esta sección asume que ya creaste el repositorio del proyecto a partir de la plantilla (botón "Use this template" en GitHub, o `gh repo create <nombre> --template <owner>/Spec-Driven-Development-Template --clone`) y lo tienes clonado localmente — es decir, siempre estás en el **Caso A** de más abajo (carpeta ya existente).
+Esta sección asume que ya creaste el repositorio del proyecto a partir de la plantilla (botón "Use this template" en GitHub, o `gh repo create <nombre> --template DaniDSanj/Spec-Driven-Development-Template --clone`) y lo tienes clonado localmente — es decir, siempre estás en el **Caso A** de más abajo (carpeta ya existente).
 
 > **Atajo automatizado**: [**bootstrap.ps1**](./bootstrap.ps1) ejecuta por ti el equivalente al Caso A + Claude Code de esta sección (`specify init --here --integration claude --script <sh|ps|py> --force`), además de los pasos de [Configuración del harness](#2-configuración-del-harness-una-vez-por-proyecto). Se ejecuta desde la raíz del repo del proyecto ya creado. Sigue requiriendo que `git`, `uv` y `specify` ya estén instalados a mano (ver "Prerrequisitos" más abajo) — el script solo comprueba que existan y se detiene con instrucciones si faltan. Ejemplo listo para copiar y editar (con todos los parámetros) en [**bootstrap_example.md**](./bootstrap_example.md); documentación completa de cada parámetro con `Get-Help .\bootstrap.ps1 -Full`. Si necesitas usar otro agente o controlar cada paso a mano, sigue esta sección.
 
