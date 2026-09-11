@@ -15,7 +15,8 @@ el código que se acaba de escribir; y la corrección la aplica el mismo hilo, q
 de la feature.
 
 La PR no se puede mergear hasta que el job `quality` de `.github/workflows/ci.yml` esté en verde
-(`required_status_checks` con `strict: true`, ver `git-update-repo`).
+(`required_status_checks`; en `dev`, además, con `strict: true`: la rama debe estar al día con `dev`.
+Ver `git-update-repo`).
 
 ## Leer el estado
 

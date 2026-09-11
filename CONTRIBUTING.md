@@ -38,8 +38,9 @@ la v1.0.0.)
 - **Idioma**: castellano, en todo el repositorio.
 - **Commits**: Conventional Commits, la misma convención que la plantilla impone a los proyectos que
   genera (`feat`, `fix`, `refactor`, `docs`, `chore`…). Ver la skill `git-update-repo`.
-- **Ramas**: `main` es la rama que copia "Use this template" y debe estar siempre publicable; se trabaja
-  en `dev` y se integra con fast-forward.
+- **Ramas**: `main` es la rama que copia "Use this template" y debe estar siempre publicable. Cada
+  cambio va en su propia rama, con PR a `dev`, y `dev` se integra en `main` con otra PR. Las dos ramas
+  están protegidas: no se admite push directo (ver la skill `git-update-repo`).
 - **Documentos**: se escriben para alguien que llega sin contexto. Si una regla necesita justificación,
   se justifica en línea; si un fichero solo tiene sentido con otro delante, se enlaza.
 
