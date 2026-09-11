@@ -90,6 +90,10 @@ feat(003-checkout): añade validación de stock antes de confirmar pedido
 | `test` | Tests, sin tocar producción |
 | `chore` | Dependencias, configuración, andamiaje |
 
+**Excepción: los commits de Dependabot.** Los genera `.github/dependabot.yml` con el formato
+`chore(deps): bump …`, sin ID de feature, porque no pertenecen a ninguna. Son válidos tal cual: no los
+reescribas, y no cuentan como incumplimiento de esta convención si aparecen en el rango de una feature.
+
 Un cambio incompatible añade `BREAKING CHANGE: <qué rompe>` en el footer del commit, no en el
 asunto. Esto mapea a SemVer (`feat` → minor, `fix` → patch, `BREAKING CHANGE` → major).
 

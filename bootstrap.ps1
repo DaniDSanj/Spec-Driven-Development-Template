@@ -16,7 +16,7 @@
   (.claude/context/00_perfil_proyecto.md: nombre, descripción, versión de Python, motor de BD,
   visibilidad) y — si se pide — completar la parte de GitHub que un repo recién generado desde
   plantilla aún no tiene (rama dev, branch protection, secret scanning con push protection,
-  Dependabot alerts, GitHub Project).
+  Dependabot alerts, private vulnerability reporting, exigencia de SHA en Actions, GitHub Project).
 
   Lo que la metodología exige que decida o revise un humano queda fuera a propósito: los campos del
   perfil sin default seguro (herramienta de migraciones, framework, cobertura objetivo, versión del
@@ -58,8 +58,8 @@
 .PARAMETER SetupGitHub
   Si se indica, intenta completar en el repositorio remoto ya existente (creado al usar la plantilla)
   lo que "Use this template" no hace por sí solo: rama dev, marcarla como rama por defecto, branch
-  protection en dev y main, secret scanning con push protection, Dependabot alerts y un GitHub
-  Project. Requiere `gh` ya instalado y autenticado (`gh auth login` es
+  protection en dev y main, secret scanning con push protection, Dependabot alerts, private
+  vulnerability reporting, exigir acciones fijadas por SHA y un GitHub Project. Requiere `gh` ya instalado y autenticado (`gh auth login` es
   un paso manual, con login por navegador, que este script no automatiza). Pide confirmación explícita
   antes de tocar nada remoto.
 
@@ -392,7 +392,7 @@ if ($SetupGitHub) {
     $nameWithOwner = gh repo view --json nameWithOwner -q .nameWithOwner
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($nameWithOwner)) {
         Write-Note 'no se pudo obtener el nombre del repositorio remoto (owner/repo); ¿tiene origin configurado?'
-        Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, Project, spending limit)'
+        Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project, spending limit)'
     } else {
         Write-Host ''
         Write-Host "Esto va a, sobre '$nameWithOwner':" -ForegroundColor Yellow
@@ -400,12 +400,13 @@ if ($SetupGitHub) {
         Write-Host "  - crear y publicar la rama 'dev', y marcarla como rama por defecto"
         Write-Host "  - intentar activar branch protection en 'dev' y 'main'"
         Write-Host "  - intentar activar secret scanning y push protection, y las Dependabot alerts"
+        Write-Host "  - intentar activar private vulnerability reporting y exigir acciones fijadas por SHA"
         Write-Host "  - crear un GitHub Project"
         $confirm = Read-Host '¿Continuar? (s/N)'
 
         if ($confirm -ine 's') {
             Write-Skip 'automatización de GitHub cancelada por el usuario'
-            Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, Project, spending limit)'
+            Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project, spending limit)'
         } else {
             try {
                 git add -A
@@ -500,6 +501,32 @@ if ($SetupGitHub) {
                     Add-ManualStep 'Activar Dependabot alerts a mano (Settings -> Advanced Security -> Dependabot alerts) — ver la seccion 2.5 (Configurar GitHub) del README.md'
                 }
 
+                # Private vulnerability reporting: el canal privado al que remite la sección "Reportar
+                # un problema" de SECURITY.md. Sin él, el formulario Security -> Report a vulnerability
+                # no existe.
+                try {
+                    gh api --method PUT "repos/$nameWithOwner/private-vulnerability-reporting" --silent
+                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE" }
+                    Write-Ok 'private vulnerability reporting activado'
+                } catch {
+                    Write-Note "no se pudo activar private vulnerability reporting: $($_.Exception.Message)"
+                    Add-ManualStep 'Activar private vulnerability reporting a mano (Settings -> Advanced Security) — ver la seccion 2.5 (Configurar GitHub) del README.md'
+                }
+
+                # Exigir acciones fijadas por SHA: ci.yml ya lo cumple; esto impide que una acción
+                # añadida después con @tag llegue a ejecutarse. PUT sobrescribe el objeto entero, así
+                # que se conserva el allowed_actions que tenga el repo.
+                try {
+                    $allowedActions = gh api "repos/$nameWithOwner/actions/permissions" -q '.allowed_actions'
+                    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($allowedActions)) { throw 'no se pudo leer la configuración actual de Actions' }
+                    gh api --method PUT "repos/$nameWithOwner/actions/permissions" -F enabled=true -f "allowed_actions=$allowedActions" -F sha_pinning_required=true --silent
+                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE" }
+                    Write-Ok 'Actions exige acciones fijadas por SHA'
+                } catch {
+                    Write-Note "no se pudo exigir el fijado por SHA en Actions: $($_.Exception.Message)"
+                    Add-ManualStep 'Exigir acciones fijadas por SHA a mano (Settings -> Actions -> General -> "Require actions to be pinned to a full-length commit SHA") — ver la seccion 2.5 (Configurar GitHub) del README.md'
+                }
+
                 try {
                     $owner = ($nameWithOwner -split '/')[0]
                     $projectJson = gh project create --owner $owner --title $ProjectName --format json | ConvertFrom-Json
@@ -521,7 +548,7 @@ if ($SetupGitHub) {
         }
     }
 } else {
-    Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, Project) — o relanzar este script con -SetupGitHub'
+    Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project) — o relanzar este script con -SetupGitHub'
 }
 
 Add-ManualStep 'Fijar Spending limit = $0 en GitHub (Settings -> Billing) — no tiene API/CLI'
@@ -540,7 +567,7 @@ Write-Host 'Automatizado por el script:' -ForegroundColor Green
 Write-Host '  - specify init (.specify/memory/constitution.md)'
 Write-Host '  - datos del proyecto en .claude/context/00_perfil_proyecto.md'
 if ($SetupGitHub) {
-    Write-Host '  - rama dev y (best-effort) branch protection en dev y main / secret scanning y push protection / Dependabot alerts / GitHub Project'
+    Write-Host '  - rama dev y (best-effort) branch protection en dev y main / secret scanning y push protection / Dependabot alerts / private vulnerability reporting / SHA obligatorio en Actions / GitHub Project'
 }
 
 Write-Host ''
