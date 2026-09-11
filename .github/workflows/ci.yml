@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Acciones fijadas por SHA completo (un tag se puede mover; un SHA no). Dependabot las actualiza.
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0             # gitleaks escanea todo el historial, no solo el último commit
           persist-credentials: false # el token no se queda en .git/config al alcance de los pasos siguientes
@@ -43,7 +43,7 @@ jobs:
       - name: Check project is initialized
         id: check
         run: echo "exists=$(test -f pyproject.toml && test -d src && echo true || echo false)" >> "$GITHUB_OUTPUT"
-      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         if: steps.check.outputs.exists == 'true'
       - run: uv sync
         if: steps.check.outputs.exists == 'true'
