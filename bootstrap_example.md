@@ -23,7 +23,7 @@ $params = @{
     SpecifyScriptType   = "ps"          # sh | ps | py (por defecto "ps")
 
     # --- Switches (comentados = desactivados) ---
-    # SetupGitHub       = $true         # Completa en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, secret scanning con push protection, Dependabot alerts, GitHub Project (pide confirmación antes de tocar nada remoto)
+    # SetupGitHub       = $true         # Completa en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, secret scanning con push protection, Dependabot alerts, private vulnerability reporting, SHA obligatorio en Actions, GitHub Project (pide confirmación antes de tocar nada remoto)
     # InstallGh         = $true         # Solo con -SetupGitHub: instala gh con winget si falta
 }
 

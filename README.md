@@ -12,7 +12,8 @@ Esta carpeta es una **plantilla de arranque** para iniciar cualquier proyecto nu
 > la puesta en marcha (todos los pasos de este documento), puedes borrarlo o sustituirlo por el README
 > real de tu proyecto — igual que `CLAUDE.md` se sobrescribe intencionadamente en el paso
 > ["Generar CLAUDE.md"](#23-generar-claudemd). Lo mismo aplica a `bootstrap.ps1`,
-> `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md`; `LICENSE` no se borra, se sustituye.
+> `bootstrap_example.md` y `CONTRIBUTING.md`. `SECURITY.md` y `LICENSE` no se borran: se adaptan
+> a tu proyecto.
 
 ## Índice
 
@@ -39,7 +40,8 @@ Este repositorio es una **GitHub Template Repository**: no se clona ni se copia 
 > script PowerShell que se ejecuta **dentro del repo ya creado desde la plantilla** (paso 0) y rellena
 > todo lo mecánico que todavía depende del proyecto concreto (`specify init`, placeholders de contexto
 > y, opcionalmente, lo que "Use this template" no deja hecho en GitHub: rama `dev`, branch protection,
-> secret scanning con push protection, Dependabot alerts, GitHub Project) y deja en un checklist final lo que exige revisión humana — generar y revisar
+> secret scanning con push protection, Dependabot alerts, reporte privado de vulnerabilidades,
+> exigencia de SHA en Actions, GitHub Project) y deja en un checklist final lo que exige revisión humana — generar y revisar
 > `CLAUDE.md`, instalar plugins de Obsidian, fijar el spending limit. Las secciones de este README
 > siguen siendo la referencia manual y el *fallback* si el script falla en algún punto. Ejemplo mínimo
 > (ejecutado desde la raíz del repo del proyecto, no desde esta plantilla):
@@ -66,7 +68,7 @@ Esta sección asume que ya creaste el repositorio del proyecto a partir de la pl
 | `jq` | Sí | Los hooks leen su entrada JSON con `jq`. Los dos guards de `PreToolUse` son *fail-closed*: sin `jq` **bloquean toda escritura, lectura y comando** que pase por ellos en vez de dejarlos pasar en silencio |
 | **Claude Code ≥ v2.1.218** | Sí | Las skills forkeadas de esta plantilla usan `background: false` en su frontmatter, que se introdujo en esa versión |
 | `pwsh` (PowerShell 7+) | Solo para `bootstrap.ps1` | El script lo declara con `#Requires -Version 7.0`. Windows PowerShell 5.1 no vale |
-| `gh` (GitHub CLI) | Solo para `bootstrap.ps1 -SetupGitHub` y la skill `git-run-actions` | Rama `dev`, branch protection, secret scanning, Dependabot alerts, Project y lectura del estado del CI |
+| `gh` (GitHub CLI) | Solo para `bootstrap.ps1 -SetupGitHub` y la skill `git-run-actions` | Rama `dev`, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project y lectura del estado del CI |
 | `gitleaks` | Solo para la red local `.githooks/pre-commit` | Escaneo de secretos antes de cada commit. Sin él, el hook avisa y deja pasar. `winget install Gitleaks.Gitleaks` · `brew install gitleaks` |
 
 ```bash
@@ -160,7 +162,7 @@ Sigue paso a paso esta sección una vez que hayas creado el repositorio desde la
 
 ⚠️**IMPORTANTE**: Sigue el orden, cada paso depende del anterior.
 
-> **Atajo automatizado**: los pasos 1, 2 (placeholders) y 3 (prompt listo para pegar) se pueden ejecutar de un tirón con [**bootstrap.ps1**](./bootstrap.ps1), incluyendo lo que "Use this template" no deja hecho en GitHub si se usa `-SetupGitHub` (rama `dev`, branch protection, secret scanning con push protection, Dependabot alerts, GitHub Project). Ejemplo listo para copiar y editar (con todos los parámetros) en [**bootstrap_example.md**](./bootstrap_example.md); documentación completa de cada parámetro con `Get-Help .\bootstrap.ps1 -Full`. Lo que sigue aquí es la referencia manual y el *fallback* si el script falla en algún punto.
+> **Atajo automatizado**: los pasos 1, 2 (placeholders) y 3 (prompt listo para pegar) se pueden ejecutar de un tirón con [**bootstrap.ps1**](./bootstrap.ps1), incluyendo lo que "Use this template" no deja hecho en GitHub si se usa `-SetupGitHub` (rama `dev`, branch protection, secret scanning con push protection, Dependabot alerts, reporte privado de vulnerabilidades, exigencia de SHA en Actions, GitHub Project). Ejemplo listo para copiar y editar (con todos los parámetros) en [**bootstrap_example.md**](./bootstrap_example.md); documentación completa de cada parámetro con `Get-Help .\bootstrap.ps1 -Full`. Lo que sigue aquí es la referencia manual y el *fallback* si el script falla en algún punto.
 
 ### 2.1 Verificar que el harness ya está presente
 
@@ -222,12 +224,14 @@ Abre `claude` dentro del proyecto y pega el prompt de [**01_init_project**](./.c
 
 Lo que "Use this template" **ya dejó hecho**: el repo, `.github/workflows/ci.yml` y todo el árbol de
 `.claude/`. Lo que queda es configuración del lado de GitHub, una sola vez por repo. `bootstrap.ps1
--SetupGitHub` automatiza (best-effort) los cinco primeros puntos:
+-SetupGitHub` automatiza (best-effort) los siete primeros puntos:
 
 - [ ] Crear la rama `dev` desde `main` y marcarla como rama por defecto para nuevos PRs.
 - [ ] Branch protection en **`dev` y `main`**: `required_status_checks.contexts = ["quality"]`, `strict: true`, `enforce_admins: true`. Las reglas y el porqué de cada ajuste están en la skill `git-update-repo`.
 - [ ] Secret scanning con **push protection** (`Settings → Advanced Security`): GitHub rechaza en el servidor un push que contenga un secreto reconocible, aunque nadie tenga activada la red local. Gratis en repos públicos; en privados exige GitHub Secret Protection (de pago), y sin él `bootstrap.ps1` lo deja como paso manual. Qué cubre cada capa del escaneo de secretos: [`SECURITY.md`](SECURITY.md).
 - [ ] Dependabot alerts activadas (`Settings → Advanced Security`): avisan de vulnerabilidades conocidas en las dependencias. Las PRs mensuales de actualización (GitHub Actions y dependencias `uv`, hacia `dev`) ya las define `.github/dependabot.yml`, que viene en el repo.
+- [ ] Private vulnerability reporting activado (`Settings → Advanced Security`): es el canal privado de **Security → Report a vulnerability** al que remite `SECURITY.md`. Gratis en cualquier repo.
+- [ ] Exigir acciones fijadas por SHA (`Settings → Actions → General`): `ci.yml` ya fija sus acciones por SHA completo; esta opción hace fallar cualquier workflow que use una por tag. Gratis en cualquier repo.
 - [ ] Crear un GitHub Project (Board/Kanban) vinculado al repo y activar sus Workflows nativas (abajo).
 - [ ] Fijar `Spending limit = $0` en `Settings → Billing` para evitar cargos accidentales de Actions (no tiene API ni CLI: es manual).
 
@@ -281,11 +285,13 @@ descripción de la PR (ver la skill `git-close-feature`).
       vacía y mantiene los corchetes de plantilla a propósito: no cuenta para este punto.)
 - [ ] `CLAUDE.md` generado y revisado a mano (sobrescribe el de la plantilla).
 - [ ] Vault de Obsidian con los plugins comunitarios instalados.
-- [ ] Repo GitHub con rama `dev`, CI y branch protection en `dev` y `main` configurados, y secret scanning con push protection si el plan lo permite.
+- [ ] Repo GitHub con rama `dev`, CI y branch protection en `dev` y `main` configurados; secret scanning con push protection si el plan lo permite; Dependabot alerts, reporte privado de vulnerabilidades y SHA obligatorio en Actions.
 - [ ] *(opcional)* Red local activada (`pre-commit` con `gitleaks` + `pre-push`): `git config core.hooksPath .githooks`.
 - [ ] Documentación de la plantilla retirada o sustituida: `README.md`, `bootstrap.ps1`,
-      `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md`. `LICENSE` **revísalo**: hereda la MIT
-      de la plantilla y probablemente quieras otra para tu proyecto.
+      `bootstrap_example.md` y `CONTRIBUTING.md`. `SECURITY.md` **se conserva y se adapta**: describe
+      los hooks, las capas de seguridad y el procedimiento ante un secreto filtrado, y remiten a él
+      los hooks del repo; revisa al menos su sección "Reportar un problema". `LICENSE` **revísalo**:
+      hereda la MIT de la plantilla y probablemente quieras otra para tu proyecto.
 
 Con esto, el harness está listo y puedes empezar el primer ciclo SDD con [**02_spec_development**](./.claude/prompts/02_spec_development.md) (proyecto nuevo: entra directamente por el paso 1.0 y sáltate la Fase 0).
 
@@ -455,7 +461,7 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | `.gitattributes` | Normalización de finales de línea. `*.sh text eol=lf` es lo que evita que los hooks lleguen con CRLF al clonar en Windows y `bash` falle con `$'\r': command not found` |
 | `LICENSE` | MIT. **Revísalo en tu proyecto**: se hereda la licencia de la plantilla, que probablemente no sea la que quieres |
 
-Este `README.md`, `bootstrap.ps1`, `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md` son documentación **de la propia plantilla** (no de tu proyecto): puedes borrarlos del repo del proyecto una vez completada la puesta en marcha, o dejarlos como referencia. `LICENSE` no se borra, se sustituye por la que corresponda a tu proyecto.
+Este `README.md`, `bootstrap.ps1`, `bootstrap_example.md` y `CONTRIBUTING.md` son documentación **de la propia plantilla** (no de tu proyecto): puedes borrarlos del repo del proyecto una vez completada la puesta en marcha, o dejarlos como referencia. `SECURITY.md` no se borra: describe lo que el repo ejecuta, sus capas de seguridad y qué hacer si se filtra un secreto, y remiten a él `.githooks/pre-commit` y `pre_edit_guard_sensitive.sh`; se adapta al proyecto (como mínimo, "Reportar un problema"). `LICENSE` tampoco se borra, se sustituye por la que corresponda a tu proyecto.
 
 ## Principio rector de toda la plantilla
 
