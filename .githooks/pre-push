@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Red local antes del push: corre las mismas cuatro comprobaciones que el job `quality` de
+# Red local antes del push: corre las cinco comprobaciones de Python del job `quality` de
 # .github/workflows/ci.yml, para detener el problema en la máquina en vez de gastar minutos de
-# GitHub Actions y un ciclo de espera.
+# GitHub Actions y un ciclo de espera. El otro paso de `quality`, el escaneo de secretos con
+# gitleaks, no se repite aquí: lo hace .githooks/pre-commit antes de que el secreto llegue a commit.
 #
 # Activación (no es automática, Git solo mira .git/hooks/ salvo que se le diga otra cosa):
 #
@@ -42,6 +43,18 @@ run_step "ruff check src/"          uv run ruff check src/
 run_step "ruff format --check src/" uv run ruff format --check src/
 run_step "ty check"                 uv run ty check
 run_step "pytest -q"                uv run pytest -q
+
+# Mismo comando que el paso `Dependency audit (pip-audit)` del CI.
+audit_deps() {
+  local req rc
+  req="$(mktemp)"
+  uv export --frozen --no-dev --no-emit-project --format requirements-txt -o "$req" --quiet \
+    && uvx pip-audit --strict --disable-pip -r "$req"
+  rc=$?
+  rm -f "$req"
+  return $rc
+}
+run_step "pip-audit (dependencias)" audit_deps
 
 if [[ $FAILED -ne 0 ]]; then
   echo "" >&2

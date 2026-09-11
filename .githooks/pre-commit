@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Red local antes del commit: busca secretos (tokens, claves, cadenas de conexión con contraseña…)
+# en lo que está en staging, con gitleaks. Se para aquí y no en pre-push porque, una vez commiteado,
+# el secreto ya está en el historial local y sacarlo exige reescribirlo.
+#
+# Activación (no es automática, Git solo mira .git/hooks/ salvo que se le diga otra cosa):
+#
+#   git config core.hooksPath .githooks
+#
+# Reglas: las de gitleaks por defecto más las excepciones de .gitleaks.toml (raíz del repo).
+# Un falso positivo concreto se silencia con un comentario `gitleaks:allow` en esa línea, o
+# añadiéndolo al allowlist de .gitleaks.toml — nunca con `git commit --no-verify` por costumbre.
+#
+# Si gitleaks no está instalado, avisa y deja pasar: no es la única red (ver SECURITY.md).
+set -uo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: no se encuentra 'gitleaks'; se omite el escaneo de secretos local." >&2
+  echo "            Instálalo: winget install Gitleaks.Gitleaks | brew install gitleaks" >&2
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo .)"
+
+CONFIG_ARGS=()
+if [[ -f "$REPO_ROOT/.gitleaks.toml" ]]; then
+  CONFIG_ARGS=(--config "$REPO_ROOT/.gitleaks.toml")
+fi
+
+# --exit-code 3 separa "hay secretos" (3) de "gitleaks ha fallado" (cualquier otro código distinto
+# de 0, p. ej. un .gitleaks.toml mal escrito): sin eso, un error se anunciaría como una fuga.
+LEAKS_EXIT=3
+gitleaks git --pre-commit --staged --redact --no-banner --exit-code "$LEAKS_EXIT" "${CONFIG_ARGS[@]}" "$REPO_ROOT"
+RC=$?
+
+if [[ $RC -eq $LEAKS_EXIT ]]; then
+  echo "" >&2
+  echo "pre-commit: commit abortado — gitleaks ha encontrado posibles secretos en lo que está en staging." >&2
+  echo "            Sácalos del commit (git restore --staged <fichero>), muévelos a .env y, si ya" >&2
+  echo "            estuvieron en algún sitio compartido, rótalos." >&2
+  exit 1
+elif [[ $RC -ne 0 ]]; then
+  # Instalado pero roto: se bloquea, porque aquí sí se esperaba un escaneo y no se ha podido hacer.
+  echo "" >&2
+  echo "pre-commit: commit abortado — gitleaks ha fallado (código $RC) y no ha podido escanear." >&2
+  echo "            Revisa el error de arriba (a menudo, la sintaxis de .gitleaks.toml)." >&2
+  exit 1
+fi
+
+exit 0

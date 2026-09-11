@@ -23,11 +23,11 @@ $params = @{
     SpecifyScriptType   = "ps"          # sh | ps | py (por defecto "ps")
 
     # --- Switches (comentados = desactivados) ---
-    # SetupGitHub       = $true         # Completa en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, GitHub Project (pide confirmación antes de tocar nada remoto)
+    # SetupGitHub       = $true         # Completa en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, secret scanning con push protection, Dependabot alerts, GitHub Project (pide confirmación antes de tocar nada remoto)
     # InstallGh         = $true         # Solo con -SetupGitHub: instala gh con winget si falta
 }
 
 .\bootstrap.ps1 @params
 ```
 
-Al terminar, el script imprime un checklist con lo que quedó pendiente de revisión humana (generar y revisar `CLAUDE.md`, completar los campos del perfil sin default, instalar plugins de Obsidian, crear el GitHub Project si no se usó `-SetupGitHub`, fijar el spending limit, activar la red local `pre-push`, etc.).
+Al terminar, el script imprime un checklist con lo que quedó pendiente de revisión humana (generar y revisar `CLAUDE.md`, completar los campos del perfil sin default, instalar plugins de Obsidian, crear el GitHub Project si no se usó `-SetupGitHub`, fijar el spending limit, activar la red local de `.githooks/` —`pre-commit` con `gitleaks` y `pre-push`—, instalar `gitleaks` si falta, etc.).

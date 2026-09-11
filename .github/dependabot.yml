@@ -1,0 +1,37 @@
+# Dependabot: como mucho una PR al mes por ecosistema, hacia `dev` (modelo de ramas de la skill
+# git-update-repo). Mensual y agrupada para que revisar actualizaciones no sea una tarea semanal; las
+# actualizaciones de seguridad no esperan a esta cadencia.
+# Cada PR pasa el mismo check `quality` que cualquier otra y se mergea tras revisión humana.
+#
+# - github-actions: mantiene al día los SHA con los que ci.yml fija sus acciones.
+# - uv: dependencias de pyproject.toml/uv.lock. Hasta que el proyecto no tiene pyproject.toml
+#   (antes de `uv init`), Dependabot registra este ecosistema como "sin fichero de dependencias" en
+#   Insights → Dependency graph → Dependabot; no bloquea nada.
+#
+# `target-branch` solo aplica a las actualizaciones de versión: las de seguridad (derivadas de las
+# Dependabot alerts) van a la rama por defecto del repo, que tras la puesta en marcha es `dev`.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "uv"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      python-dependencies:
+        patterns: ["*"]

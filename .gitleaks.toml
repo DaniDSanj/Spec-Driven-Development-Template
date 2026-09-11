@@ -1,0 +1,15 @@
+# Configuración de gitleaks de la plantilla SDD.
+# La usa .githooks/pre-commit (escaneo de lo que está en staging). Parte de las reglas por defecto
+# de gitleaks y solo añade excepciones: ficheros que por definición no contienen secretos reales.
+#
+# Para un falso positivo puntual, prefiere un comentario `gitleaks:allow` en la propia línea antes
+# que ampliar este allowlist: una excepción por ruta silencia también los secretos reales futuros.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Plantillas de variables de entorno: nombres de variable con valores de ejemplo, nunca secretos"
+paths = [
+  '''(^|/)\.env\.(example|sample|template)$''',
+]
