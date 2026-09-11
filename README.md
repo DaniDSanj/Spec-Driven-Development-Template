@@ -12,7 +12,8 @@ Esta carpeta es una **plantilla de arranque** para iniciar cualquier proyecto nu
 > la puesta en marcha (todos los pasos de este documento), puedes borrarlo o sustituirlo por el README
 > real de tu proyecto — igual que `CLAUDE.md` se sobrescribe intencionadamente en el paso
 > ["Generar CLAUDE.md"](#23-generar-claudemd). Lo mismo aplica a `bootstrap.ps1`,
-> `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md`; `LICENSE` no se borra, se sustituye.
+> `bootstrap_example.md` y `CONTRIBUTING.md`. `SECURITY.md` y `LICENSE` no se borran: se adaptan
+> a tu proyecto.
 
 ## Índice
 
@@ -25,7 +26,7 @@ Esta carpeta es una **plantilla de arranque** para iniciar cualquier proyecto nu
 
 ## Primeros Pasos
 
-Este repositorio es una **GitHub Template Repository**: no se clona ni se copia a mano, se usa como origen para generar un repositorio nuevo, que nace ya con todo el árbol de la plantilla (`.claude/`, `.specify/memory/`, `docs/`, `.githooks/`, `.github/workflows/ci.yml`, `.gitignore`, `.gitattributes`, `LICENSE`) en su ruta final. Para poder utilizar esta plantilla, sigue estas indicaciones:
+Este repositorio es una **GitHub Template Repository**: no se clona ni se copia a mano, se usa como origen para generar un repositorio nuevo, que nace ya con todo el árbol de la plantilla (`.claude/`, `.specify/memory/`, `docs/`, `.githooks/`, `.github/workflows/ci.yml`, `.github/dependabot.yml`, `.gitignore`, `.gitattributes`, `.gitleaks.toml`, `LICENSE`) en su ruta final. Para poder utilizar esta plantilla, sigue estas indicaciones:
 
 0. Crea el repositorio del proyecto desde esta plantilla: botón **"Use this template"** en la página de este repo en GitHub, o `gh repo create <nombre> --template DaniDSanj/Spec-Driven-Development-Template --clone`. Clónalo localmente si no usaste `--clone`.
 1. Ejecuta `specify init` en el repo ya creado siguiendo la sección [**Instalación de Spec-Kit**](#1-instalación-de-spec-kit).
@@ -39,7 +40,8 @@ Este repositorio es una **GitHub Template Repository**: no se clona ni se copia 
 > script PowerShell que se ejecuta **dentro del repo ya creado desde la plantilla** (paso 0) y rellena
 > todo lo mecánico que todavía depende del proyecto concreto (`specify init`, placeholders de contexto
 > y, opcionalmente, lo que "Use this template" no deja hecho en GitHub: rama `dev`, branch protection,
-> GitHub Project) y deja en un checklist final lo que exige revisión humana — generar y revisar
+> secret scanning con push protection, Dependabot alerts, reporte privado de vulnerabilidades,
+> exigencia de SHA en Actions, GitHub Project) y deja en un checklist final lo que exige revisión humana — generar y revisar
 > `CLAUDE.md`, instalar plugins de Obsidian, fijar el spending limit. Las secciones de este README
 > siguen siendo la referencia manual y el *fallback* si el script falla en algún punto. Ejemplo mínimo
 > (ejecutado desde la raíz del repo del proyecto, no desde esta plantilla):
@@ -63,10 +65,11 @@ Esta sección asume que ya creaste el repositorio del proyecto a partir de la pl
 | `uv` | Sí | Gestor de Python y de entornos; lo usan los hooks y el CI |
 | `specify` | Sí | El CLI de Spec-Kit |
 | `bash` | Sí | `.claude/settings.json` invoca con `bash` los cuatro hooks de `.claude/hooks/`. En Windows viene con **Git Bash** (Git for Windows); en WSL/Linux/macOS ya está |
-| `jq` | Sí | Los hooks leen su entrada JSON con `jq`. Los dos guards de `PreToolUse` son *fail-closed*: sin `jq` **bloquean toda escritura** en vez de dejarla pasar en silencio |
+| `jq` | Sí | Los hooks leen su entrada JSON con `jq`. Los dos guards de `PreToolUse` son *fail-closed*: sin `jq` **bloquean toda escritura, lectura y comando** que pase por ellos en vez de dejarlos pasar en silencio |
 | **Claude Code ≥ v2.1.218** | Sí | Las skills forkeadas de esta plantilla usan `background: false` en su frontmatter, que se introdujo en esa versión |
 | `pwsh` (PowerShell 7+) | Solo para `bootstrap.ps1` | El script lo declara con `#Requires -Version 7.0`. Windows PowerShell 5.1 no vale |
-| `gh` (GitHub CLI) | Solo para `bootstrap.ps1 -SetupGitHub` y la skill `git-run-actions` | Rama `dev`, branch protection, Project y lectura del estado del CI |
+| `gh` (GitHub CLI) | Solo para `bootstrap.ps1 -SetupGitHub` y la skill `git-run-actions` | Rama `dev`, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project y lectura del estado del CI |
+| `gitleaks` | Solo para la red local `.githooks/pre-commit` | Escaneo de secretos antes de cada commit. Sin él, el hook avisa y deja pasar. `winget install Gitleaks.Gitleaks` · `brew install gitleaks` |
 
 ```bash
 # uv (gestor de Python recomendado; también instala Python si falta)
@@ -159,7 +162,7 @@ Sigue paso a paso esta sección una vez que hayas creado el repositorio desde la
 
 ⚠️**IMPORTANTE**: Sigue el orden, cada paso depende del anterior.
 
-> **Atajo automatizado**: los pasos 1, 2 (placeholders) y 3 (prompt listo para pegar) se pueden ejecutar de un tirón con [**bootstrap.ps1**](./bootstrap.ps1), incluyendo lo que "Use this template" no deja hecho en GitHub si se usa `-SetupGitHub` (rama `dev`, branch protection, GitHub Project). Ejemplo listo para copiar y editar (con todos los parámetros) en [**bootstrap_example.md**](./bootstrap_example.md); documentación completa de cada parámetro con `Get-Help .\bootstrap.ps1 -Full`. Lo que sigue aquí es la referencia manual y el *fallback* si el script falla en algún punto.
+> **Atajo automatizado**: los pasos 1, 2 (placeholders) y 3 (prompt listo para pegar) se pueden ejecutar de un tirón con [**bootstrap.ps1**](./bootstrap.ps1), incluyendo lo que "Use this template" no deja hecho en GitHub si se usa `-SetupGitHub` (rama `dev`, branch protection, secret scanning con push protection, Dependabot alerts, reporte privado de vulnerabilidades, exigencia de SHA en Actions, GitHub Project). Ejemplo listo para copiar y editar (con todos los parámetros) en [**bootstrap_example.md**](./bootstrap_example.md); documentación completa de cada parámetro con `Get-Help .\bootstrap.ps1 -Full`. Lo que sigue aquí es la referencia manual y el *fallback* si el script falla en algún punto.
 
 ### 2.1 Verificar que el harness ya está presente
 
@@ -170,18 +173,18 @@ ls .claude/context/       # 00_perfil_proyecto.md
 ls .claude/skills/        # las 19 de la plantilla (critic-requirements, critic-plan, critic-verifications, dev-python-coding, dev-python-testing, db-model-conventions, db-model-ideas, db-model-protocol, db-model-integration, docs-adr-writer, docs-vault-sync, docs-changelog, docs-runbook, docs-consistency-check, git-update-repo, git-close-feature, git-run-actions, verify-prepare, verify-validate) + las 10 speckit-* que añadió specify init
 ls .claude/agents/        # docs-manager.md, spec-critic.md, security-reviewer.md, database-manager.md, spec-verifier.md
 ls .claude/hooks/         # *.sh + .claude/settings.json en la raíz de .claude/
-ls .githooks/             # pre-push (red local opcional, ver más abajo)
+ls .githooks/             # pre-commit, pre-push (red local opcional, ver más abajo)
 ls .specify/memory/       # data-model.md, db_ideas.md (+ constitution.md tras specify init)
 ls docs/                  # Specs/, ADR/records/, Data-Model/, Runbooks/, Changelog/, Meta/
-ls .github/workflows/     # ci.yml
-ls .gitignore .gitattributes LICENSE
+ls .github/ .github/workflows/   # dependabot.yml, workflows/ci.yml
+ls .gitignore .gitattributes .gitleaks.toml LICENSE
 ```
 
 Si falta alguna, el repo no se creó correctamente desde la plantilla — vuelve a generarlo con "Use this template" en vez de copiar ficheros a mano.
 
 No hace falta `chmod +x` sobre los hooks: `settings.json` los invoca como `bash "<ruta>"`, así que el bit de ejecución es irrelevante. Los finales de línea sí importan, y de eso se encarga `.gitattributes` (`*.sh text eol=lf`), para que `bash` no falle con `$'\r': command not found` al clonar en Windows.
 
-Opcionalmente, activa la red local que corre lint, formato, tipado y tests **antes** de cada `push` (ahorra minutos de GitHub Actions y un ciclo de espera):
+Opcionalmente, activa la red local de `.githooks/`: `pre-commit` busca secretos con `gitleaks` en lo que está en staging **antes** de cada commit, y `pre-push` corre lint, formato, tipado, tests y la auditoría de CVEs de dependencias **antes** de cada `push` (ahorra minutos de GitHub Actions y un ciclo de espera):
 
 ```bash
 git config core.hooksPath .githooks
@@ -221,10 +224,14 @@ Abre `claude` dentro del proyecto y pega el prompt de [**01_init_project**](./.c
 
 Lo que "Use this template" **ya dejó hecho**: el repo, `.github/workflows/ci.yml` y todo el árbol de
 `.claude/`. Lo que queda es configuración del lado de GitHub, una sola vez por repo. `bootstrap.ps1
--SetupGitHub` automatiza (best-effort) los tres primeros puntos:
+-SetupGitHub` automatiza (best-effort) los siete primeros puntos:
 
 - [ ] Crear la rama `dev` desde `main` y marcarla como rama por defecto para nuevos PRs.
 - [ ] Branch protection en **`dev` y `main`**: `required_status_checks.contexts = ["quality"]`, `strict: true`, `enforce_admins: true`. Las reglas y el porqué de cada ajuste están en la skill `git-update-repo`.
+- [ ] Secret scanning con **push protection** (`Settings → Advanced Security`): GitHub rechaza en el servidor un push que contenga un secreto reconocible, aunque nadie tenga activada la red local. Gratis en repos públicos; en privados exige GitHub Secret Protection (de pago), y sin él `bootstrap.ps1` lo deja como paso manual. Qué cubre cada capa del escaneo de secretos: [`SECURITY.md`](SECURITY.md).
+- [ ] Dependabot alerts activadas (`Settings → Advanced Security`): avisan de vulnerabilidades conocidas en las dependencias. Las PRs mensuales de actualización (GitHub Actions y dependencias `uv`, hacia `dev`) ya las define `.github/dependabot.yml`, que viene en el repo.
+- [ ] Private vulnerability reporting activado (`Settings → Advanced Security`): es el canal privado de **Security → Report a vulnerability** al que remite `SECURITY.md`. Gratis en cualquier repo.
+- [ ] Exigir acciones fijadas por SHA (`Settings → Actions → General`): `ci.yml` ya fija sus acciones por SHA completo; esta opción hace fallar cualquier workflow que use una por tag. Gratis en cualquier repo.
 - [ ] Crear un GitHub Project (Board/Kanban) vinculado al repo y activar sus Workflows nativas (abajo).
 - [ ] Fijar `Spending limit = $0` en `Settings → Billing` para evitar cargos accidentales de Actions (no tiene API ni CLI: es manual).
 
@@ -270,7 +277,7 @@ descripción de la PR (ver la skill `git-close-feature`).
 ```
 
 - [ ] `specify check` en verde.
-- [ ] `bash`, `jq` y `uv` en el `PATH` (sin `jq` los guards bloquean toda escritura: son *fail-closed*).
+- [ ] `bash`, `jq` y `uv` en el `PATH` (sin `jq` los guards bloquean toda escritura, lectura y comando: son *fail-closed*).
 - [ ] `.claude/context/00_perfil_proyecto.md` sin placeholders `[ ]` pendientes. **Es el único fichero
       del repo que hay que rellenar**: ni `docs/Meta/`, ni las skills, ni los prompts llevan placeholders.
 - [ ] `.specify/memory/data-model.md` con las entidades reales, o vaciado si el proyecto aún no tiene
@@ -278,11 +285,13 @@ descripción de la PR (ver la skill `git-close-feature`).
       vacía y mantiene los corchetes de plantilla a propósito: no cuenta para este punto.)
 - [ ] `CLAUDE.md` generado y revisado a mano (sobrescribe el de la plantilla).
 - [ ] Vault de Obsidian con los plugins comunitarios instalados.
-- [ ] Repo GitHub con rama `dev`, CI y branch protection en `dev` y `main` configurados.
-- [ ] *(opcional)* Red local activada: `git config core.hooksPath .githooks`.
+- [ ] Repo GitHub con rama `dev`, CI y branch protection en `dev` y `main` configurados; secret scanning con push protection si el plan lo permite; Dependabot alerts, reporte privado de vulnerabilidades y SHA obligatorio en Actions.
+- [ ] *(opcional)* Red local activada (`pre-commit` con `gitleaks` + `pre-push`): `git config core.hooksPath .githooks`.
 - [ ] Documentación de la plantilla retirada o sustituida: `README.md`, `bootstrap.ps1`,
-      `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md`. `LICENSE` **revísalo**: hereda la MIT
-      de la plantilla y probablemente quieras otra para tu proyecto.
+      `bootstrap_example.md` y `CONTRIBUTING.md`. `SECURITY.md` **se conserva y se adapta**: describe
+      los hooks, las capas de seguridad y el procedimiento ante un secreto filtrado, y remiten a él
+      los hooks del repo; revisa al menos su sección "Reportar un problema". `LICENSE` **revísalo**:
+      hereda la MIT de la plantilla y probablemente quieras otra para tu proyecto.
 
 Con esto, el harness está listo y puedes empezar el primer ciclo SDD con [**02_spec_development**](./.claude/prompts/02_spec_development.md) (proyecto nuevo: entra directamente por el paso 1.0 y sáltate la Fase 0).
 
@@ -378,7 +387,7 @@ Motor de base de datos compartido por las skills `db-model-protocol` y `db-model
 Motor de documentación compartido por las skills `docs-adr-writer`, `docs-vault-sync` y `docs-runbook`. Contexto limpio: ve los ficheros de la feature y el vault, no el histórico de la conversación. No tiene `Bash` (`tools: Read, Grep, Glob, Write, Edit`): escribe borradores pero no commitea, no edita un ADR ya aceptado y no inventa contenido que no esté en `spec.md`/`plan.md`/los commits.
 
 ##### `security-reviewer`
-Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/`.env`, migraciones, entradas no confiables) antes de `/speckit-converge`, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook `pre_edit_guard_sensitive.sh` (que bloquea la escritura) revisando la lógica una vez escrita.
+Revisa cambios que tocan superficies sensibles (autenticación, gestión de secretos/`.env`, migraciones, entradas no confiables) antes de `/speckit-converge`, buscando vulnerabilidades tipo OWASP Top 10. Complementa al hook `pre_edit_guard_sensitive.sh` (que bloquea la escritura, y la lectura de `.env`) revisando la lógica una vez escrita.
 
 ##### `spec-verifier`
 Motor de ejecución compartido por las skills `verify-prepare` y `verify-validate`. Nunca corrige código de producción, configuración ni tests, y nunca inventa un resultado sin evidencia objetiva; solo puede escribir `quickstart_agent.md` de la feature activa, restricción reforzada por el hook `guard-quickstart-agent.sh` (declarado en su propio frontmatter, no en `.claude/settings.json`, porque solo debe aplicar a sus escrituras, no a toda la sesión).
@@ -389,14 +398,19 @@ Todos los hooks son solo **recomendaciones** para este stack en concreto y ya vi
 
 1. **PostToolUse en `Edit`/`Write` sobre `*.py`** → `ruff format` + `ruff check --fix` + `ty check` automáticos. Falla en abierto: si faltan `jq` o `uv`, no hace nada y la edición sigue. Es una comodidad, no una barrera.
 2. **Stop** → `uv run pytest -q`; si falla, Claude ve el resultado antes de dar la tarea por cerrada. Gateado por `pyproject.toml` + `src/`, igual que el CI, y con protección de bucle (`stop_hook_active`) para que unos tests que no se consiguen arreglar no reenganchen la sesión indefinidamente.
-3. **PreToolUse en `Write`/`Edit`/`Bash` sobre `migrations/**` o ficheros `.env`** → bloquea la escritura (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). El humano decide manualmente si aplica el cambio por otra vía. Cubre `Bash` además de `Write`/`Edit` porque si no, un `alembic revision`, un `sed -i` o un `echo >` lo rodearían y la red de seguridad sería decorativa. Tres compromisos deliberados: para `migrations/` bloquea cualquier comando que mencione la ruta, lectura incluida (leer una migración se hace con las herramientas `Read`/`Grep`, que no pasan por el hook); para `.env` bloquea solo cuando es destino de escritura, para no romper usos legítimos como `docker compose --env-file`, y deja pasar `.env.example`/`.sample`/`.template`, que son plantillas sin secretos.
+3. **PreToolUse en `Write`/`Edit`/`Read`/`Grep`/`Bash` sobre `migrations/**` o ficheros `.env`** → bloquea la escritura de ambos y la lectura de `.env` (no pide confirmación: el hook sale con código 2 y corta la acción), dado que son ficheros de alto riesgo (datos de producción / secretos). Leer un `.env` también es una fuga: su contenido entra en la conversación y sale de la máquina. El humano decide manualmente si aplica el cambio por otra vía. Cubre `Bash` además de las herramientas de ficheros porque si no, un `alembic revision`, un `sed -i`, un `echo >` o un `cat .env` lo rodearían y la red de seguridad sería decorativa. Tres compromisos deliberados: para `migrations/` bloquea cualquier comando `Bash` que mencione la ruta, lectura incluida (leer una migración se hace con `Read`/`Grep`, que el hook deja pasar para migraciones); para `.env` en `Bash` bloquea la escritura y los comandos de lectura habituales (`cat`, `head`, `grep`, `Get-Content`, `source`…), pero no cualquier mención, para no romper usos legítimos como `docker compose --env-file`; y deja pasar siempre `.env.example`/`.sample`/`.template`, que son plantillas sin secretos.
 4. **PreToolUse en `Write`/`Edit`, scopeado al subagente `spec-verifier`** (declarado en `.claude/agents/spec-verifier.md`, no en la lista de arriba) → bloquea cualquier escritura suya que no sea `quickstart_agent.md` de la feature activa.
 
-Los dos guards (3 y 4) son **fail-closed**: si falta `jq`, si el JSON de entrada no se puede interpretar o si no llega `file_path`, **bloquean**. Un `PreToolUse` que sale con un código distinto de 2 es, para Claude Code, un error *no bloqueante*: la acción se permitiría igualmente. Un guard que "falla hacia fuera" sería decorativo justo cuando más falta hace. El precio es que sin `jq` no se puede escribir nada — por eso es prerrequisito obligatorio, y por eso `bootstrap.ps1` se detiene si falta.
+Los dos guards (3 y 4) son **fail-closed**: si falta `jq` o si el JSON de entrada no se puede interpretar, **bloquean** (el 4, además, si no llega `file_path`). Un `PreToolUse` que sale con un código distinto de 2 es, para Claude Code, un error *no bloqueante*: la acción se permitiría igualmente. Un guard que "falla hacia fuera" sería decorativo justo cuando más falta hace. El precio es que sin `jq` no se puede escribir nada — por eso es prerrequisito obligatorio, y por eso `bootstrap.ps1` se detiene si falta.
 
 Los dos comparan rutas **normalizando el separador**, así que funcionan igual con `H:\proyecto\migrations\001.py` que con `/proyecto/migrations/001.py`. Sus límites conocidos están en [`SECURITY.md`](SECURITY.md): son una red de seguridad, no un sandbox.
 
-Fuera de `.claude/`, la plantilla trae además **`.githooks/pre-push`** (opcional, se activa con `git config core.hooksPath .githooks`): corre las mismas cuatro comprobaciones que el job `quality` del CI antes de cada `push`, para no gastar minutos de Actions en un fallo detectable en local.
+Fuera de `.claude/`, la plantilla trae además dos hooks de Git en **`.githooks/`** (opcionales, se activan juntos con `git config core.hooksPath .githooks`):
+
+- **`pre-commit`**: escanea con `gitleaks` lo que está en staging y aborta el commit si encuentra un posible secreto. Usa las reglas por defecto de gitleaks más las excepciones de `.gitleaks.toml` (las plantillas `.env.example`/`.sample`/`.template`). Si `gitleaks` no está instalado, avisa y deja pasar; si está instalado pero falla (p. ej. `.gitleaks.toml` mal escrito), bloquea.
+- **`pre-push`**: corre las cinco comprobaciones de Python del job `quality` del CI (ruff, formato, ty, pytest y la auditoría de CVEs de dependencias con `pip-audit`) antes de cada `push`, para no gastar minutos de Actions en un fallo detectable en local. El otro paso de `quality`, el escaneo de secretos, lo cubre `pre-commit`.
+
+El job `quality` repite el escaneo de `gitleaks` en el CI sobre **todo el historial** del repo, en cada PR y cada push a `dev`, esté o no activada la red local. Ese paso corre antes del gate de `pyproject.toml`/`src/`, así que protege desde el primer commit del proyecto. Usa la misma `.gitleaks.toml` que el hook local.
 
 ### ¿Cómo añadir herramientas nuevas más adelante?
 
@@ -439,13 +453,15 @@ Al usar "Use this template", el repo nuevo nace con estas rutas ya en su sitio (
 | `.claude/hooks/*.sh` + `.claude/settings.json` | Hooks recomendados (formateo post-edición, tests en Stop, guard de ficheros sensibles, guard de escritura de `spec-verifier` scopeado en su propio agente) |
 | `.claude/prompts/*.md` | Biblioteca de prompts maestros: `01_init_project.md` (generación única del `CLAUDE.md` real) y `02_spec_development.md` (ciclo completo de una spec, con Fase 0 de encuadre para retomar el proyecto) |
 | `docs/` | Esqueleto del vault de Obsidian (`Specs/`, `ADR/records/`, `Data-Model/`, `Runbooks/`, `Changelog/`, `Meta/` con las guías de setup/workflow y las plantillas de nota) |
-| `.githooks/pre-push` | Red local opcional: corre las mismas comprobaciones que el CI antes de cada `push`. Se activa con `git config core.hooksPath .githooks` |
-| `.github/workflows/ci.yml` | Workflow de CI (ruff/ty/pytest), gateado por la existencia de `pyproject.toml` y `src/` |
-| `.gitignore` | Escrito para este stack: secretos (`.env*`, claves), Python, entornos `uv` (pero **no** `uv.lock`, que se versiona), estado local de Obsidian y `settings.local.json` de Claude Code |
+| `.githooks/pre-commit`, `.githooks/pre-push` | Red local opcional: `pre-commit` escanea secretos con `gitleaks` antes de cada commit; `pre-push` corre las comprobaciones de Python del CI (ruff/ty/pytest/pip-audit) antes de cada `push`. Se activan con `git config core.hooksPath .githooks` |
+| `.gitleaks.toml` | Configuración de `gitleaks`: reglas por defecto más el allowlist de las plantillas `.env.example`/`.sample`/`.template` |
+| `.github/workflows/ci.yml` | Workflow de CI: escaneo de secretos con `gitleaks` sobre todo el historial (siempre) y ruff/ty/pytest/pip-audit (gateados por la existencia de `pyproject.toml` y `src/`). Token de solo lectura (`permissions: contents: read`) y acciones fijadas por SHA completo, no por tag |
+| `.github/dependabot.yml` | Como mucho una PR mensual de Dependabot por ecosistema, hacia `dev`: GitHub Actions (mantiene al día los SHA de `ci.yml`) y dependencias `uv`. Pasan el mismo check `quality` y se mergean tras revisión humana |
+| `.gitignore` | Escrito para este stack: secretos (`.env*`, claves y certificados, `.pgpass`, `credentials.json`), datos de BD (backups `.bak`, dumps, `.mdf`/`.ldf`, SQLite), Python, entornos `uv` (pero **no** `uv.lock`, que se versiona), estado local de Obsidian y `settings.local.json` de Claude Code |
 | `.gitattributes` | Normalización de finales de línea. `*.sh text eol=lf` es lo que evita que los hooks lleguen con CRLF al clonar en Windows y `bash` falle con `$'\r': command not found` |
 | `LICENSE` | MIT. **Revísalo en tu proyecto**: se hereda la licencia de la plantilla, que probablemente no sea la que quieres |
 
-Este `README.md`, `bootstrap.ps1`, `bootstrap_example.md`, `CONTRIBUTING.md` y `SECURITY.md` son documentación **de la propia plantilla** (no de tu proyecto): puedes borrarlos del repo del proyecto una vez completada la puesta en marcha, o dejarlos como referencia. `LICENSE` no se borra, se sustituye por la que corresponda a tu proyecto.
+Este `README.md`, `bootstrap.ps1`, `bootstrap_example.md` y `CONTRIBUTING.md` son documentación **de la propia plantilla** (no de tu proyecto): puedes borrarlos del repo del proyecto una vez completada la puesta en marcha, o dejarlos como referencia. `SECURITY.md` no se borra: describe lo que el repo ejecuta, sus capas de seguridad y qué hacer si se filtra un secreto, y remiten a él `.githooks/pre-commit` y `pre_edit_guard_sensitive.sh`; se adapta al proyecto (como mínimo, "Reportar un problema"). `LICENSE` tampoco se borra, se sustituye por la que corresponda a tu proyecto.
 
 ## Principio rector de toda la plantilla
 

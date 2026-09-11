@@ -3,14 +3,35 @@
 # de la plantilla (Python + uv + Obsidian + Claude Code), no solo para la plantilla misma.
 
 # --- Secretos --------------------------------------------------------------
-# El hook pre_edit_guard_sensitive.sh impide *escribir* estos ficheros desde el asistente;
+# El hook pre_edit_guard_sensitive.sh impide *escribir* (y, en el caso de .env, *leer*) estos
+# ficheros desde el asistente;
 # estas reglas impiden *commitearlos* si los creas tú a mano.
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+.pgpass
+credentials.json
 secrets.json
+
+# --- Datos de base de datos ------------------------------------------------
+# Backups, dumps y ficheros de datos: suelen contener datos reales (personales, de producción) y
+# no tienen sitio en Git. El esquema se versiona como migraciones, nunca como volcado.
+# Si un fichero así es un fixture legítimo de tests, re-inclúyelo explícitamente, p. ej.:
+#   !tests/fixtures/*.sqlite
+*.bak
+*.dump
+*.sql.gz
+*.mdf
+*.ldf
+*.sqlite
+*.sqlite3
+*.db
 
 # --- Python ----------------------------------------------------------------
 __pycache__/

@@ -27,15 +27,18 @@ gh run view <run-id> --log       # log completo, si hace falta el contexto previ
 
 ## Diagnóstico por paso
 
-El job `quality` corre cuatro comprobaciones en este orden. Identifica cuál falló antes de proponer
-nada — el log de un paso posterior no aparece si uno anterior cortó.
+El job `quality` corre seis comprobaciones en este orden: el escaneo de secretos (siempre) y las
+cinco de Python (solo tras el gate). Identifica cuál falló antes de proponer nada — el log de un paso
+posterior no aparece si uno anterior cortó.
 
 | Paso | Qué falla | Corrección típica |
 |---|---|---|
-| `uv run ruff check src/` | Lint (imports sin usar, complejidad, reglas activas) | `uv run ruff check --fix src/` y revisar lo que no arregla solo |
+| `Secret scan (gitleaks)` | `gitleaks` ha encontrado un posible secreto en algún commit del historial (el log lo muestra redactado, con fichero, línea y commit) | **No es un fallo de CI, es un incidente**: detente y avisa al humano. El secreto ya está en GitHub, así que hay que rotarlo; sacarlo del último commit no basta. Si es un falso positivo, `gitleaks:allow` en la línea o una entrada en `.gitleaks.toml`, siempre con aprobación humana |
+| `uv run ruff check src/` | Lint (imports sin usar, complejidad, reglas activas), incluidas las de seguridad `S*` | `uv run ruff check --fix src/` y revisar lo que no arregla solo. Un `S*` se corrige cambiando el código (ver `dev-python-coding`), no con `noqa` |
 | `uv run ruff format --check src/` | Formato | `uv run ruff format src/` |
 | `uv run ty check` | Tipado estático | Corregir la anotación; convenciones en `dev-python-coding` |
 | `uv run pytest -q` | Tests | Es un fallo real de la feature: vuelve al paso 4.1, no relajes el test |
+| `Dependency audit (pip-audit)` | Una dependencia de ejecución de `uv.lock` tiene una CVE conocida (el log da paquete, versión, ID y versión corregida). También falla si `uv.lock` no existe o no está al día con `pyproject.toml` (`--frozen`) | Actualizar a la versión corregida (`uv lock --upgrade-package <paquete>`) y volver a correr los tests. Si no hay versión corregida, es decisión del humano: excepción documentada (`--ignore-vuln <ID>` en el paso, con ADR) o sustituir la dependencia. Puede fallar en una PR que no tocó dependencias si la CVE es nueva: no es culpa de la feature, pero hay que resolverlo igual |
 
 Reproduce siempre en local antes de pushear una corrección — cada intento a ciegas consume minutos de
 Actions y un ciclo de espera.
@@ -45,8 +48,9 @@ Actions y un ciclo de espera.
 `.github/workflows/ci.yml` es **estático a propósito** y está gateado por la existencia de
 `pyproject.toml` **y** de `src/` (el step `Check project is initialized`, que evita que el job falle
 cuando el workflow ya está en el repo pero todavía no se ha ejecutado `uv init` ni existe el paquete).
-Si el check `quality` sale verde sin haber ejecutado nada, es este gate: comprueba que el proyecto
-tiene ambas cosas antes de dar por buena la ausencia de fallos. No lo regeneres ni lo parchees para
+Si el check `quality` sale verde habiendo ejecutado solo el escaneo de secretos (que va antes del
+gate y corre siempre), es este gate: comprueba que el proyecto tiene ambas cosas antes de dar por
+buena la ausencia de fallos. No lo regeneres ni lo parchees para
 que un check pase: eso rompe la garantía de que el mismo workflow vale desde el primer commit del
 proyecto, y convierte un fallo real en uno silenciado.
 
@@ -57,14 +61,23 @@ apliques de paso mientras arreglas un check.
 Añadir jobs nuevos (`release-please` o `git-cliff` para changelog automático desde Conventional
 Commits) es legítimo cuando el proyecto lo justifica, y sigue siendo una decisión del humano.
 
+La única edición recurrente de `ci.yml` que no es una decisión nueva es la que propone Dependabot
+(`.github/dependabot.yml`): una PR mensual hacia `dev` que actualiza los SHA con los que se fijan las
+acciones. Se revisa y se mergea como cualquier otra PR, tras pasar `quality`. Si el salto es de
+versión mayor, lee las notas de la acción antes de aprobar. Al fijar una acción nueva, usa también su
+SHA completo con la versión en un comentario, nunca un tag.
+
 ## Red local: `pre-push`
 
-El hook local `.githooks/pre-push` corre las mismas comprobaciones (`ruff`/`ty`/`pytest`) antes de
+El hook local `.githooks/pre-push` corre las mismas comprobaciones de Python (`ruff`/`ty`/`pytest`/`pip-audit`) antes de
 dejar pushear, así que el problema se detiene un paso antes, en la máquina y sin gastar minutos:
 
 ```bash
 git config core.hooksPath .githooks
 ```
+
+El mismo `core.hooksPath` activa también `.githooks/pre-commit`, que escanea secretos con `gitleaks`
+antes de cada commit. Si lo bloquea, no se salta con `--no-verify`: se saca el secreto del commit.
 
 ## Coste de minutos de Actions
 

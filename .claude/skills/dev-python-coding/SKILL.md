@@ -56,6 +56,25 @@ cualquier humano que retome el proyecto.
 | Ruff | Lint + formato (sustituye a flake8/black/isort) | `uv run ruff check --fix src/` / `uv run ruff format src/` |
 | ty (o mypy/pyright si el proyecto ya los usaba) | Type-checking estático | `uv run ty check` |
 
+### Reglas de seguridad de Ruff (obligatorias)
+
+Además de las reglas por defecto, activa el grupo `S` (port de *bandit*) en `pyproject.toml`:
+
+```toml
+[tool.ruff.lint]
+extend-select = ["S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]   # pytest usa assert
+```
+
+Detecta, entre otros: SQL construido con f-strings o concatenación (`S608`), `subprocess` con
+`shell=True` (`S602`), contraseñas en el código (`S105`/`S106`), `pickle`/`yaml.load` sobre datos no
+confiables (`S301`/`S506`) y peticiones HTTP sin `timeout` (`S113`). La corrección es cambiar el
+código — consultas parametrizadas, lista de argumentos en vez de `shell=True`, secretos desde el
+entorno —, no silenciar la regla. Un `# noqa: S<código>` solo vale para un falso positivo real y lleva
+al lado el porqué.
+
 Ruff y el type-checker corren automáticamente vía el hook `PostToolUse`
 (`.claude/hooks/post_edit_python_format.sh`) — **no los invoques a mano tras cada edición**. Lo que sí
 debes hacer es leer lo que el hook reporte y corregirlo antes de dar la tarea por escrita.
