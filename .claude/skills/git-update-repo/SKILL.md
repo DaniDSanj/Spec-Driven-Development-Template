@@ -47,12 +47,12 @@ independientes, cada una suficiente por sí sola:
 
 ## Branch protection
 
-Modelo objetivo, idéntico en `dev` y en `main`:
+Modelo objetivo, igual en `dev` y en `main` salvo `strict`:
 
 | Ajuste | Valor | Por qué |
 |---|---|---|
 | `required_status_checks.contexts` | `["quality"]` | El único job de `.github/workflows/ci.yml` |
-| `required_status_checks.strict` | `true` | La rama debe estar actualizada con la base antes de mergear |
+| `required_status_checks.strict` | `dev`: `true` · `main`: `false` | En `dev`, la rama de feature debe estar al día con `dev` antes de mergear: varias features compiten por entrar. En `main` no: solo recibe `dev` por PR, y cada merge deja en `main` un commit sin contenido que `dev` no tiene; con `strict` habría que abrir una PR `main → dev` antes de cada integración. No se pierde cobertura: el check de una PR se ejecuta sobre el resultado del merge, que es exactamente lo que entra en `main` |
 | `enforce_admins` | `true` | Nadie, ni el owner, se lo salta |
 | `required_pull_request_reviews.required_approving_review_count` | `0` | PR obligatoria, pero sin aprobación de terceros: en un repo de una sola persona nadie puede aprobar la PR y `main` quedaría bloqueado. Súbelo a `1` en cuanto el proyecto tenga un segundo revisor. |
 

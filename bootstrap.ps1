@@ -444,26 +444,29 @@ if ($SetupGitHub) {
                     Add-ManualStep "Marcar 'dev' como rama por defecto a mano (Settings -> Branches -> Default branch)"
                 }
 
-                # Modelo documentado por la skill git-update-repo: idéntico en 'dev' y 'main'.
+                # Modelo documentado por la skill git-update-repo: igual en 'dev' y 'main' salvo strict.
                 # enforce_admins = $true es lo que hace que la rama de feature sea obligatoria de
                 # verdad (el push directo a 'dev' falla incluso siendo owner).
                 # required_approving_review_count = 0: PR obligatoria, pero sin aprobación de un
                 # tercero, o en un repo de una sola persona 'main' quedaría bloqueado.
-                $protectionBody = @{
-                    required_status_checks        = @{ strict = $true; contexts = @('quality') }
-                    enforce_admins                = $true
-                    required_pull_request_reviews = @{ required_approving_review_count = 0 }
-                    restrictions                  = $null
-                } | ConvertTo-Json -Depth 5
-
+                # strict (rama al día con la base) solo en 'dev': a 'main' solo llega 'dev' por PR, y cada
+                # merge deja en 'main' un commit sin contenido que 'dev' no tiene; con strict en 'main'
+                # habría que abrir una PR 'main' -> 'dev' antes de cada integración.
                 foreach ($branch in @('dev', 'main')) {
+                    $protectionBody = @{
+                        required_status_checks        = @{ strict = ($branch -eq 'dev'); contexts = @('quality') }
+                        enforce_admins                = $true
+                        required_pull_request_reviews = @{ required_approving_review_count = 0 }
+                        restrictions                  = $null
+                    } | ConvertTo-Json -Depth 5
+
                     try {
                         $protectionBody | gh api --method PUT "repos/$nameWithOwner/branches/$branch/protection" --input -
                         if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE (branch protection no suele estar disponible en repos privados sin GitHub Pro/Team)" }
                         Write-Ok "branch protection activada en '$branch'"
                     } catch {
                         Write-Note "no se pudo activar branch protection en '$branch': $($_.Exception.Message)"
-                        Add-ManualStep "Activar branch protection en '$branch' a mano (Settings -> Branches): check 'quality' requerido, strict, enforce admins — ver la seccion 2.5 (Configurar GitHub) del README.md"
+                        Add-ManualStep "Activar branch protection en '$branch' a mano (Settings -> Branches): check 'quality' requerido, strict (solo en dev), enforce admins — ver la seccion 2.5 (Configurar GitHub) del README.md"
                     }
                 }
 

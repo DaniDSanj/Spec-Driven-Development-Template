@@ -227,7 +227,7 @@ Lo que "Use this template" **ya dejó hecho**: el repo, `.github/workflows/ci.ym
 -SetupGitHub` automatiza (best-effort) los siete primeros puntos:
 
 - [ ] Crear la rama `dev` desde `main` y marcarla como rama por defecto para nuevos PRs.
-- [ ] Branch protection en **`dev` y `main`**: `required_status_checks.contexts = ["quality"]`, `strict: true`, `enforce_admins: true`. Las reglas y el porqué de cada ajuste están en la skill `git-update-repo`.
+- [ ] Branch protection en **`dev` y `main`**: `required_status_checks.contexts = ["quality"]`, `strict: true` en `dev` (en `main`, `false`: así integrar `dev` en `main` es una sola PR), `enforce_admins: true`. Las reglas y el porqué de cada ajuste están en la skill `git-update-repo`.
 - [ ] Secret scanning con **push protection** (`Settings → Advanced Security`): GitHub rechaza en el servidor un push que contenga un secreto reconocible, aunque nadie tenga activada la red local. Gratis en repos públicos; en privados exige GitHub Secret Protection (de pago), y sin él `bootstrap.ps1` lo deja como paso manual. Qué cubre cada capa del escaneo de secretos: [`SECURITY.md`](SECURITY.md).
 - [ ] Dependabot alerts activadas (`Settings → Advanced Security`): avisan de vulnerabilidades conocidas en las dependencias. Las PRs mensuales de actualización (GitHub Actions y dependencias `uv`, hacia `dev`) ya las define `.github/dependabot.yml`, que viene en el repo.
 - [ ] Private vulnerability reporting activado (`Settings → Advanced Security`): es el canal privado de **Security → Report a vulnerability** al que remite `SECURITY.md`. Gratis en cualquier repo.
