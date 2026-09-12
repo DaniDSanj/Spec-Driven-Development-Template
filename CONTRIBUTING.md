@@ -21,6 +21,8 @@ Los sitios que casi siempre hay que tocar a la vez:
 | La numeración de un paso del ciclo | Las `description` de las skills implicadas (Claude las lee para decidir cuándo autoinvocarlas) y los enlaces internos de `02_spec_development.md` |
 | Un placeholder de `00_perfil_proyecto.md` | El bloque `$replacements` de `bootstrap.ps1`, que sustituye literales |
 | Una sección numerada del `README.md` | `bootstrap.ps1` y la skill `git-update-repo` la citan por número ("la sección 2.5") |
+| Un paso del job `quality` de `.github/workflows/ci.yml`, o la versión de `gitleaks` que fija | `SECURITY.md`, la tabla de diagnóstico de `git-run-actions`, la cabecera de `.githooks/pre-push` y las secciones 4 y 5 del `README.md` |
+| El modelo de branch protection, o lo que activa `bootstrap.ps1 -SetupGitHub` | La skill `git-update-repo`, el checklist de la sección 2.5 del `README.md`, la ayuda de `bootstrap.ps1` y `bootstrap_example.md` |
 
 Antes de dar un cambio por cerrado, haz una pasada de consistencia sobre todo el repo. Dos comprobaciones
 mecánicas que ayudan:
@@ -30,8 +32,7 @@ mecánicas que ayudan:
 # Referencias a /skills y a subagentes que ya no existen
 ```
 
-(No hay script; se hacen a mano o pidiéndoselo al asistente, que es como se hicieron en la auditoría de
-la v1.0.0.)
+(No hay script: se hacen a mano o pidiéndoselo al asistente.)
 
 ## Estilo
 
@@ -56,4 +57,9 @@ solo añaden ruido a la carga inicial del asistente; ese criterio es deliberado 
 
 ## Seguridad
 
-Los fallos de seguridad no van en un issue público: ver [`SECURITY.md`](SECURITY.md).
+Activa la red local antes de empezar: `git config core.hooksPath .githooks`. El hook `pre-commit`
+escanea secretos con `gitleaks` y `pre-push` corre las comprobaciones del CI. Qué protege cada capa
+está en [`SECURITY.md`](SECURITY.md).
+
+Los fallos de seguridad no van en un issue público: usa la vía privada que indica
+[`SECURITY.md`](SECURITY.md).

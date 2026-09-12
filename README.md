@@ -66,7 +66,7 @@ Esta sección asume que ya creaste el repositorio del proyecto a partir de la pl
 | `specify` | Sí | El CLI de Spec-Kit |
 | `bash` | Sí | `.claude/settings.json` invoca con `bash` los cuatro hooks de `.claude/hooks/`. En Windows viene con **Git Bash** (Git for Windows); en WSL/Linux/macOS ya está |
 | `jq` | Sí | Los hooks leen su entrada JSON con `jq`. Los dos guards de `PreToolUse` son *fail-closed*: sin `jq` **bloquean toda escritura, lectura y comando** que pase por ellos en vez de dejarlos pasar en silencio |
-| **Claude Code ≥ v2.1.218** | Sí | Las skills forkeadas de esta plantilla usan `background: false` en su frontmatter, que se introdujo en esa versión |
+| **Claude Code ≥ v2.1.218** | Sí | Las skills forkeadas de esta plantilla usan `background: false` en su frontmatter, que requiere esa versión |
 | `pwsh` (PowerShell 7+) | Solo para `bootstrap.ps1` | El script lo declara con `#Requires -Version 7.0`. Windows PowerShell 5.1 no vale |
 | `gh` (GitHub CLI) | Solo para `bootstrap.ps1 -SetupGitHub` y la skill `git-run-actions` | Rama `dev`, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project y lectura del estado del CI |
 | `gitleaks` | Solo para la red local `.githooks/pre-commit` | Escaneo de secretos antes de cada commit. Sin él, el hook avisa y deja pasar. `winget install Gitleaks.Gitleaks` · `brew install gitleaks` |
@@ -87,7 +87,7 @@ brew install jq                 # macOS
 specify check
 ```
 
-⚠️ **IMPORTANTE — verificado contra Spec-Kit `0.14.2`.** Entre versiones de Spec-Kit han cambiado tanto los flags (`--ai` pasó a `--integration`) como **el nombre y la ubicación de los comandos**: hasta la 0.13 eran ficheros en `.claude/commands/` invocados como `/speckit.plan` (con punto); desde la 0.14 son *skills* en `.claude/skills/speckit-*/` invocadas como `/speckit-plan` (**con guion**). Toda esta plantilla usa la forma con guion.
+⚠️ **IMPORTANTE — verificado contra Spec-Kit `0.14.2`.** Los comandos de Spec-Kit son *skills* en `.claude/skills/speckit-*/` y se invocan **con guion** (`/speckit-plan`), y `specify init` selecciona el agente con `--integration`. Toda esta plantilla usa esa forma, y otra versión de Spec-Kit puede instalar comandos con otro nombre o en otra ruta.
 
 Antes de copiar nada literalmente, confirma qué instaló tu versión:
 
@@ -194,8 +194,8 @@ git config core.hooksPath .githooks
 
 Todos los valores que cambian de un proyecto a otro viven en **un único fichero**,
 [**00_perfil_proyecto.md**](./.claude/context/00_perfil_proyecto.md). Es también el **único** fichero
-que queda en `.claude/context/`: las convenciones de método ya no son ficheros de contexto siempre
-activos, sino skills que se cargan bajo demanda y que leen de aquí el valor que necesiten.
+que queda en `.claude/context/`: las convenciones de método son skills que se cargan bajo
+demanda y leen de aquí el valor que necesiten, no ficheros de contexto siempre activos.
 
 | Fichero | Descripción |
 | --- | --- |
