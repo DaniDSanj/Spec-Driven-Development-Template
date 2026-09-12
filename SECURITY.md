@@ -67,7 +67,7 @@ Hay tres capas. Las dos primeras usan `gitleaks` con la misma configuración (`.
   de que nadie haya activado nada en su máquina. Descarga el binario oficial de `gitleaks` fijado por
   versión y verifica su checksum antes de ejecutarlo.
 - **Servidor, secret scanning con push protection de GitHub**: GitHub rechaza el `push` que contiene
-  un secreto de un proveedor reconocido, antes de que llegue al repo remoto. `bootstrap.ps1 -SetupGitHub`
+  un secreto de un proveedor reconocido, antes de que llegue al repo remoto. `setup-github.ps1`
   intenta activarlo; es gratis en repos públicos, pero en privados exige GitHub Secret Protection (de
   pago) y, sin él, queda como paso manual. No lee `.gitleaks.toml`: sus patrones son los de GitHub, y
   se puede saltar puntualmente desde la propia interfaz de GitHub, que deja registro de quién lo hizo.
@@ -100,7 +100,7 @@ local y el del CI, pero nada impide mergear con el check `quality` en rojo.
   capacidad de escritura.
 - **Acciones fijadas por SHA completo**, no por tag: un tag se puede mover a otro commit (es como se
   comprometieron acciones populares en ataques reales); un SHA no. El comentario al lado indica la
-  versión. `bootstrap.ps1 -SetupGitHub` activa además la opción del repo que **exige** el fijado por
+  versión. `setup-github.ps1` activa además la opción del repo que **exige** el fijado por
   SHA, así que un workflow que use una acción por tag falla en vez de ejecutarse.
 - **`.github/dependabot.yml`** abre cada mes, si hay novedades, una PR por ecosistema hacia `dev` con
   las actualizaciones de las acciones (nuevos SHA) y de las dependencias `uv`. Cada una pasa `quality`
@@ -109,8 +109,8 @@ local y el del CI, pero nada impide mergear con el check `quality` en rojo.
   (sin el grupo `dev`) contra la base de datos de vulnerabilidades de PyPI y **bloquea** la PR si
   alguna tiene una CVE conocida. Consecuencia aceptada: una CVE recién publicada puede poner en rojo
   una PR que no tocó dependencias.
-- **Dependabot alerts** avisan de vulnerabilidades conocidas en las dependencias. `bootstrap.ps1
-  -SetupGitHub` intenta activarlas; si no puede, quedan como paso manual.
+- **Dependabot alerts** avisan de vulnerabilidades conocidas en las dependencias. `setup-github.ps1`
+  intenta activarlas; si no puede, quedan como paso manual.
 - **Herramientas que Dependabot no actualiza**: la versión de `gitleaks` está fijada en `ci.yml` junto
   a su checksum y se actualiza a mano; `pip-audit` se ejecuta con `uvx` en su última versión.
 
@@ -146,11 +146,11 @@ Si encuentras un fallo de seguridad en este repositorio —un guard que se puede
 hook que ejecuta algo inesperado, código vulnerable, una instrucción que induce a commitear secretos—
 **no abras un issue público**. Usa el formulario privado de GitHub: pestaña **Security → Report a
 vulnerability** de este repositorio. Requiere que el repo tenga activado *private vulnerability
-reporting*, que `bootstrap.ps1 -SetupGitHub` activa en la puesta en marcha.
+reporting*, que `setup-github.ps1` activa en la puesta en marcha.
 
 Para cualquier otro fallo, un issue normal es lo correcto.
 
-Si el fallo está en el andamiaje heredado de la plantilla SDD (los hooks, los guards, `bootstrap.ps1`)
+Si el fallo está en el andamiaje heredado de la plantilla SDD (los hooks, los guards, `bootstrap.ps1`, `setup-github.ps1`)
 y no en el código propio del proyecto, repórtalo también en el repositorio de la plantilla,
 [`DaniDSanj/Spec-Driven-Development-Template`](https://github.com/DaniDSanj/Spec-Driven-Development-Template),
 por la misma vía privada.

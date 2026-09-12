@@ -23,11 +23,22 @@ $params = @{
     SpecifyScriptType   = "ps"          # sh | ps | py (por defecto "ps")
 
     # --- Switches (comentados = desactivados) ---
-    # SetupGitHub       = $true         # Completa en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, secret scanning con push protection, Dependabot alerts, private vulnerability reporting, SHA obligatorio en Actions, GitHub Project (pide confirmación antes de tocar nada remoto)
-    # InstallGh         = $true         # Solo con -SetupGitHub: instala gh con winget si falta
+    # SetupGitHub       = $true         # Invoca setup-github.ps1 para completar en el repo remoto lo que "Use this template" no hace: rama dev, branch protection, secret scanning con push protection, Dependabot alerts, private vulnerability reporting, SHA obligatorio en Actions, GitHub Project (pide confirmación antes de tocar nada remoto)
+    # InstallGh         = $true         # Solo con -SetupGitHub: se pasa a setup-github.ps1, que instala gh con winget si falta
 }
 
 .\bootstrap.ps1 @params
 ```
 
-Al terminar, el script imprime un checklist con lo que quedó pendiente de revisión humana (generar y revisar `CLAUDE.md`, completar los campos del perfil sin default, instalar plugins de Obsidian, crear el GitHub Project si no se usó `-SetupGitHub`, fijar el spending limit, activar la red local de `.githooks/` —`pre-commit` con `gitleaks` y `pre-push`—, instalar `gitleaks` si falta, etc.).
+Al terminar, el script imprime un checklist con lo que quedó pendiente de revisión humana (revisar, commitear y publicar los placeholders rellenados, generar y revisar `CLAUDE.md`, completar los campos del perfil sin default, instalar plugins de Obsidian, crear el GitHub Project si no se usó `-SetupGitHub`, fijar el spending limit, activar la red local de `.githooks/` —`pre-commit` con `gitleaks` y `pre-push`—, instalar `gitleaks` si falta, etc.).
+
+## Reaplicar solo la configuración de GitHub
+
+La parte de GitHub vive en [`setup-github.ps1`](./setup-github.ps1), que `-SetupGitHub` invoca por ti. Ese script **se conserva en el proyecto** y se vuelve a ejecutar por su cuenta siempre que la configuración del repo se desincronice (alguien desactiva un ajuste a mano, se añade un check requerido al CI). Solo necesita `git` y `gh`:
+
+```powershell
+# Reaplicar todo, sin volver a crear el tablero y sin preguntar:
+pwsh -File .\setup-github.ps1 -SkipProject -Yes
+```
+
+Documentación de sus parámetros: `Get-Help .\setup-github.ps1 -Full`.

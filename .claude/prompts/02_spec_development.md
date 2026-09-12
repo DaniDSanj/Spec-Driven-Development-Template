@@ -486,12 +486,13 @@ lista separada por comas — GitHub solo cierra la referencia que sigue inmediat
 ### 5.7 — `/git-run-actions`
 
 La PR no se puede mergear hasta que el job `quality` de `.github/workflows/ci.yml` esté en verde
-(`required_status_checks` con `strict: true`).
+(`required_status_checks` con `strict: true`). En las PR contra `main` hay un segundo check
+requerido, `source-branch-gate`, que falla si la PR no viene de `dev`.
 
 ```
 /git-run-actions
 
-Comprueba el estado del check `quality` en la PR #N. Si está en rojo, muéstrame el log del paso que falla y propón la corrección.
+Comprueba el estado de los checks de la PR #N. Si alguno está en rojo, muéstrame el log del paso que falla y propón la corrección.
 ```
 
 **Siguiente:** [5.8](#58--merge-y-cierre).

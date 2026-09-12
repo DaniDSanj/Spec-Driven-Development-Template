@@ -20,9 +20,10 @@ Los sitios que casi siempre hay que tocar a la vez:
 | Un fichero de `.claude/context/` | El `README.md` y `.claude/prompts/01_init_project.md` (son los dos sitios que los enumeran). Los números **no se reasignan** al retirar un fichero |
 | La numeración de un paso del ciclo | Las `description` de las skills implicadas (Claude las lee para decidir cuándo autoinvocarlas) y los enlaces internos de `02_spec_development.md` |
 | Un placeholder de `00_perfil_proyecto.md` | El bloque `$replacements` de `bootstrap.ps1`, que sustituye literales |
-| Una sección numerada del `README.md` | `bootstrap.ps1` y la skill `git-update-repo` la citan por número ("la sección 2.5") |
+| Una sección numerada del `README.md` | `bootstrap.ps1`, `setup-github.ps1` y la skill `git-update-repo` la citan por número ("la sección 2.5") |
 | Un paso del job `quality` de `.github/workflows/ci.yml`, o la versión de `gitleaks` que fija | `SECURITY.md`, la tabla de diagnóstico de `git-run-actions`, la cabecera de `.githooks/pre-push` y las secciones 4 y 5 del `README.md` |
-| El modelo de branch protection, o lo que activa `bootstrap.ps1 -SetupGitHub` | La skill `git-update-repo`, el checklist de la sección 2.5 del `README.md`, la ayuda de `bootstrap.ps1` y `bootstrap_example.md` |
+| El modelo de branch protection, o lo que activa `setup-github.ps1` | La skill `git-update-repo`, el checklist de la sección 2.5 del `README.md`, la ayuda de `setup-github.ps1` y la de `bootstrap.ps1`, y `bootstrap_example.md` |
+| Un job de `.github/workflows/ci.yml` que sea *required status check* (añadirlo, renombrarlo o quitarlo) | El `$branchContexts` de `setup-github.ps1` (lo referencia por nombre de job), la tabla de branch protection de `git-update-repo`, el checklist de la sección 2.5 del `README.md` y la tabla de diagnóstico de `git-run-actions`. Ojo al orden al añadir uno: el job debe existir ya en la rama base antes de exigirlo, o toda PR queda bloqueada |
 
 Antes de dar un cambio por cerrado, haz una pasada de consistencia sobre todo el repo. Dos comprobaciones
 mecánicas que ayudan:
