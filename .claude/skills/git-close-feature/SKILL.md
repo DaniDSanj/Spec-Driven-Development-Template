@@ -36,6 +36,12 @@ gh pr create --base dev --head feature/<id-speckit>-<slug> \
 Si la feature necesita más de un commit, agrúpalos por unidad lógica (implementación, tests,
 documentación) en vez de en un único commit gigante — `docs-changelog` los lee uno a uno.
 
+Con la red local activada (`git config core.hooksPath .githooks`), el `commit` pasa por
+`.githooks/pre-commit`, que escanea secretos con `gitleaks` y puede abortarlo, y el `push` por
+`.githooks/pre-push`, que corre las comprobaciones del CI. Un bloqueo de `pre-commit` **no** se salta
+con `--no-verify`: se saca el secreto del commit y, si ya estuvo publicado en algún sitio, se rota
+(procedimiento en `SECURITY.md`).
+
 ## `Closes #N`: repetido por issue, nunca una lista
 
 **Formato obligatorio.** GitHub solo interpreta como cierre automático la referencia que sigue

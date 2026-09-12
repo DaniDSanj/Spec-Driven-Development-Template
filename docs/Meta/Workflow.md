@@ -127,5 +127,5 @@ SORT fecha DESC
 
 ## Regla de actualización
 
-- La documentación se actualiza **al cierre de cada fase relevante del ciclo SDD**, no de forma diferida al final del proyecto. Ya no es una tabla que haya que recordar consultar: son los pasos numerados 2.3, 2.4, 5.3, 5.4 y 5.5 de `@.claude/prompts/02_spec_development.md`.
+- La documentación se actualiza **al cierre de cada fase relevante del ciclo SDD**, no de forma diferida al final del proyecto. No es una tabla que haya que recordar consultar: son los pasos numerados 2.3, 2.4, 5.3, 5.4 y 5.5 de `@.claude/prompts/02_spec_development.md`.
 - Todo enlace cruzado (Spec ↔ ADR ↔ Issue de GitHub ↔ Runbook) se hace con wikilinks `[[ ]]` para que Dataview y el grafo de Obsidian puedan navegar la trazabilidad completa del proyecto.
