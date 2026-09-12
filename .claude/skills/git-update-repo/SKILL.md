@@ -47,17 +47,30 @@ independientes, cada una suficiente por sí sola:
 
 ## Branch protection
 
-Modelo objetivo, idéntico en `dev` y en `main`:
+Modelo objetivo, igual en `dev` y en `main` salvo `contexts` y `strict`:
 
 | Ajuste | Valor | Por qué |
 |---|---|---|
-| `required_status_checks.contexts` | `["quality"]` | El único job de `.github/workflows/ci.yml` |
-| `required_status_checks.strict` | `true` | La rama debe estar actualizada con la base antes de mergear |
+| `required_status_checks.contexts` | `dev`: `["quality"]` · `main`: `["quality", "source-branch-gate"]` | `quality` es el job de comprobaciones de `.github/workflows/ci.yml`. `source-branch-gate` solo puede exigirse en `main`: es el job que hace cumplir la regla de abajo, y en las PR contra `dev` no llega ni a ejecutarse |
+| `required_status_checks.strict` | `dev`: `true` · `main`: `false` | En `dev`, la rama de feature debe estar al día con `dev` antes de mergear: varias features compiten por entrar. En `main` no: solo recibe `dev` por PR, y cada merge deja en `main` un commit sin contenido que `dev` no tiene; con `strict` habría que abrir una PR `main → dev` antes de cada integración. No se pierde cobertura: el check de una PR se ejecuta sobre el resultado del merge, que es exactamente lo que entra en `main` |
 | `enforce_admins` | `true` | Nadie, ni el owner, se lo salta |
 | `required_pull_request_reviews.required_approving_review_count` | `0` | PR obligatoria, pero sin aprobación de terceros: en un repo de una sola persona nadie puede aprobar la PR y `main` quedaría bloqueado. Súbelo a `1` en cuanto el proyecto tenga un segundo revisor. |
+| `required_pull_request_reviews.dismiss_stale_reviews` | `true` | Una aprobación deja de valer en cuanto llegan commits nuevos. Con `required_approving_review_count: 0` todavía no cambia nada; queda puesto para que subirlo a `1` no exija revisar también esto |
+| `required_conversation_resolution` | `true` | No se mergea con comentarios de revisión sin resolver. Es lo que evita que una objeción escrita en la PR se pierda al hacer merge |
+| `allow_force_pushes` / `allow_deletions` | `false` | El historial de `dev` y `main` no se reescribe ni se borra la rama. Ya es el valor por omisión de la API; se envían explícitos para que un `PUT` futuro no los pierda |
 
 `required_approving_review_count` **no sustituye** a `required_status_checks`: son comprobaciones
 independientes, y sin la segunda una PR con el CI en rojo se puede mergear igual.
+
+## A `main` solo se llega desde `dev`
+
+Ninguna rama de feature abre PR contra `main` directamente. GitHub no tiene ningún ajuste de branch
+protection que restrinja la rama **origen** de una PR, así que la regla la hace cumplir el job
+`source-branch-gate` de `.github/workflows/ci.yml`: solo se ejecuta cuando la rama base es `main`, y
+falla si la rama origen no es `dev`. Al estar en los `contexts` de `main`, una PR
+`feature/* → main` queda bloqueada con el CI en rojo.
+
+Si te topas con ese fallo, la PR no se arregla: se cierra y se abre contra `dev`.
 
 Leer y escribir la configuración:
 
@@ -69,9 +82,11 @@ gh api --method PUT repos/<owner>/<repo>/branches/<rama>/protection --input -  #
 **`PUT` sobrescribe el objeto entero.** Incluye siempre todos los campos que ya existían, no solo el
 que cambias, o se pierden. Lee primero con `GET`, modifica, y envía el objeto completo.
 
-`bootstrap.ps1 -SetupGitHub` aplica este modelo a las dos ramas en la puesta en marcha (best-effort:
-branch protection no suele estar disponible en repos privados sin GitHub Pro/Team). Si falló ahí, el
-checklist de puesta en marcha del `README.md` lo deja como paso manual.
+`setup-github.ps1` aplica este modelo a las dos ramas, verifica releyendo el estado real y es
+reejecutable: si la protección se desincroniza —alguien la toca a mano, se añade un check requerido
+al CI—, se vuelve a lanzar. En la puesta en marcha lo invoca `bootstrap.ps1 -SetupGitHub`. Es
+best-effort: branch protection no suele estar disponible en repos privados sin GitHub Pro/Team, y en
+ese caso el checklist de puesta en marcha del `README.md` lo deja como paso manual.
 
 ## Mensajes de commit
 

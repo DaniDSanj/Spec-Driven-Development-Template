@@ -12,11 +12,15 @@
   El repositorio ya nace con todo el harness en su sitio (.claude/context, .claude/skills,
   .claude/agents, .claude/hooks, .specify/memory, docs/, .github/workflows/ci.yml) porque se generó
   con "Use this template" / `gh repo create --template`. Este script solo se encarga de lo que
-  todavía depende del proyecto concreto: ejecutar `specify init`, rellenar el perfil del proyecto
+  todavía depende del proyecto concreto: ejecutar `specify init` y rellenar el perfil del proyecto
   (.claude/context/00_perfil_proyecto.md: nombre, descripción, versión de Python, motor de BD,
-  visibilidad) y — si se pide — completar la parte de GitHub que un repo recién generado desde
-  plantilla aún no tiene (rama dev, branch protection, secret scanning con push protection,
-  Dependabot alerts, private vulnerability reporting, exigencia de SHA en Actions, GitHub Project).
+  visibilidad).
+
+  La parte de GitHub (rama dev, branch protection, secret scanning con push protection, Dependabot
+  alerts, private vulnerability reporting, exigencia de SHA en Actions, GitHub Project) vive en un
+  script aparte, setup-github.ps1, porque tiene otros prerrequisitos y otro ciclo de vida: se
+  reaplica cada vez que la configuración del repositorio se desincroniza, mientras que lo de aquí se
+  hace una sola vez. Con -SetupGitHub, este script lo invoca por ti.
 
   Lo que la metodología exige que decida o revise un humano queda fuera a propósito: los campos del
   perfil sin default seguro (herramienta de migraciones, framework, cobertura objetivo, versión del
@@ -56,19 +60,18 @@
   `specify init`. Por defecto ps, acorde al shell principal de este entorno.
 
 .PARAMETER SetupGitHub
-  Si se indica, intenta completar en el repositorio remoto ya existente (creado al usar la plantilla)
-  lo que "Use this template" no hace por sí solo: rama dev, marcarla como rama por defecto, branch
-  protection en dev y main, secret scanning con push protection, Dependabot alerts, private
-  vulnerability reporting, exigir acciones fijadas por SHA y un GitHub Project. Requiere `gh` ya instalado y autenticado (`gh auth login` es
-  un paso manual, con login por navegador, que este script no automatiza). Pide confirmación explícita
-  antes de tocar nada remoto.
+  Si se indica, invoca setup-github.ps1 (que debe estar junto a este script) para completar en el
+  repositorio remoto ya existente lo que "Use this template" no hace por sí solo: rama dev, marcarla
+  como rama por defecto, branch protection en dev y main, secret scanning con push protection,
+  Dependabot alerts, private vulnerability reporting, exigir acciones fijadas por SHA y un GitHub
+  Project. Ese script pide confirmación explícita antes de tocar nada remoto, y comprueba él mismo sus
+  prerrequisitos (`gh` instalado y autenticado). Sin este parámetro, ejecutarlo queda como paso del
+  checklist final.
 
 .PARAMETER InstallGh
-  Solo tiene efecto junto con -SetupGitHub. Si falta `gh` (GitHub CLI), lo instala con winget antes de
-  continuar, igual que este script ya asume que tú instalaste `uv`/`specify` de antemano — aquí, bajo
-  petición explícita, lo hace el propio script. La autenticación (`gh auth login`) sigue siendo manual
-  por naturaleza (login por navegador): si tras instalar `gh` no está autenticado, el script se detiene
-  con instrucciones en vez de continuar.
+  Solo tiene efecto junto con -SetupGitHub: se pasa tal cual a setup-github.ps1, que instalará `gh`
+  con winget si falta. La autenticación (`gh auth login`) sigue siendo manual por naturaleza (login
+  por navegador).
 
 .NOTES
   El script es idempotente por construcción: solo sustituye placeholders literales del perfil del
@@ -228,44 +231,8 @@ if ($InstallGh -and -not $SetupGitHub) {
     Write-Note '-InstallGh no tiene efecto sin -SetupGitHub; se ignora'
 }
 
-$hasGh = $false
-if ($SetupGitHub) {
-    $hasGh = Test-Prereq 'gh' $true
-
-    if ((-not $hasGh) -and $InstallGh) {
-        Write-Section 'Instalando GitHub CLI (gh)'
-        if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-            Write-Host 'No se encontró winget para instalar gh automáticamente. Instálalo tú: https://cli.github.com/' -ForegroundColor Red
-            exit 1
-        }
-        winget install --id GitHub.cli --source winget --accept-package-agreements --accept-source-agreements
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "winget install de GitHub.cli devolvió el código $LASTEXITCODE" -ForegroundColor Red
-            exit 1
-        }
-        # Refresca el PATH de esta sesión con el valor ya actualizado en el registro, para no
-        # depender de abrir una terminal nueva (winget no propaga el PATH al proceso que lo invocó).
-        $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
-        $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-        $env:Path = $machinePath + ';' + $userPath
-        $hasGh = Test-Prereq 'gh' $true
-    }
-
-    if (-not $hasGh) {
-        Write-Host ''
-        Write-Host 'Se pidió -SetupGitHub pero falta gh (GitHub CLI).' -ForegroundColor Red
-        Write-Host '  Instálalo tú (https://cli.github.com/) o relanza el script añadiendo -InstallGh.'
-        exit 1
-    }
-
-    gh auth status *> $null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host ''
-        Write-Host 'gh no está autenticado. Ejecuta `gh auth login` (requiere navegador) y vuelve a lanzar el script con -SetupGitHub.' -ForegroundColor Red
-        exit 1
-    }
-    Write-Ok 'gh autenticado'
-}
+# `gh`, su instalación con winget y su autenticación son prerrequisitos del Paso 5, que vive en
+# setup-github.ps1: los comprueba él, no este script.
 
 Write-Section 'specify check'
 specify check
@@ -384,174 +351,39 @@ Add-ManualStep 'Abrir el vault de Obsidian en docs/ e instalar los plugins comun
 
 # ---------------------------------------------------------------------------
 # Paso 5 — Completar en GitHub lo que "Use this template" no hace (solo con -SetupGitHub)
+#
+# La configuración de GitHub vive en su propio script, setup-github.ps1. Está separada a propósito:
+# tiene otros prerrequisitos (solo git y gh, nada de uv/specify/bash/jq) y otro ciclo de vida —
+# rellenar el perfil o ejecutar `specify init` se hace una vez, mientras que la configuración del
+# repositorio se reaplica cada vez que se desincroniza. Aquí solo se delega, para que la puesta en
+# marcha completa siga siendo un único comando.
 # ---------------------------------------------------------------------------
 
-if ($SetupGitHub) {
-    Write-Section 'Paso 5: completar el repositorio de GitHub'
+Write-Section 'Paso 5: repositorio de GitHub'
 
-    $nameWithOwner = gh repo view --json nameWithOwner -q .nameWithOwner
-    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($nameWithOwner)) {
-        Write-Note 'no se pudo obtener el nombre del repositorio remoto (owner/repo); ¿tiene origin configurado?'
-        Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project, spending limit)'
-    } else {
-        Write-Host ''
-        Write-Host "Esto va a, sobre '$nameWithOwner':" -ForegroundColor Yellow
-        Write-Host "  - hacer commit de los placeholders rellenados y publicarlo en la rama actual"
-        Write-Host "  - crear y publicar la rama 'dev', y marcarla como rama por defecto"
-        Write-Host "  - intentar activar branch protection en 'dev' y 'main'"
-        Write-Host "  - intentar activar secret scanning y push protection, y las Dependabot alerts"
-        Write-Host "  - intentar activar private vulnerability reporting y exigir acciones fijadas por SHA"
-        Write-Host "  - crear un GitHub Project"
-        $confirm = Read-Host '¿Continuar? (s/N)'
+$setupGitHubScript = Join-Path $PSScriptRoot 'setup-github.ps1'
 
-        if ($confirm -ine 's') {
-            Write-Skip 'automatización de GitHub cancelada por el usuario'
-            Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project, spending limit)'
-        } else {
-            try {
-                git add -A
-                $status = git status --porcelain
-                if ($status) {
-                    git commit -m 'chore: rellenar placeholders de la plantilla SDD' | Out-Null
-                    git push
-                    Write-Ok 'placeholders publicados'
-                } else {
-                    Write-Skip 'no hay cambios pendientes de commit'
-                }
-
-                # En una segunda ejecución la rama 'dev' ya existe: `git checkout -b` falla y, sin
-                # comprobarlo, el script seguiría trabajando desde la rama actual sin darse cuenta.
-                git rev-parse --verify --quiet refs/heads/dev *> $null
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Skip "la rama 'dev' ya existe en local"
-                    git checkout dev
-                    if ($LASTEXITCODE -ne 0) { throw "no se pudo cambiar a la rama dev (código $LASTEXITCODE)" }
-                } else {
-                    git checkout -b dev
-                    if ($LASTEXITCODE -ne 0) { throw "no se pudo crear la rama dev (código $LASTEXITCODE)" }
-                }
-
-                git push -u origin dev
-                if ($LASTEXITCODE -ne 0) { throw "no se pudo publicar la rama dev (código $LASTEXITCODE)" }
-                Write-Ok "rama 'dev' publicada"
-
-                try {
-                    gh repo edit $nameWithOwner --default-branch dev
-                    if ($LASTEXITCODE -ne 0) { throw "gh repo edit devolvió el código $LASTEXITCODE" }
-                    Write-Ok "'dev' marcada como rama por defecto"
-                } catch {
-                    Write-Note "no se pudo marcar 'dev' como rama por defecto: $($_.Exception.Message)"
-                    Add-ManualStep "Marcar 'dev' como rama por defecto a mano (Settings -> Branches -> Default branch)"
-                }
-
-                # Modelo documentado por la skill git-update-repo: idéntico en 'dev' y 'main'.
-                # enforce_admins = $true es lo que hace que la rama de feature sea obligatoria de
-                # verdad (el push directo a 'dev' falla incluso siendo owner).
-                # required_approving_review_count = 0: PR obligatoria, pero sin aprobación de un
-                # tercero, o en un repo de una sola persona 'main' quedaría bloqueado.
-                $protectionBody = @{
-                    required_status_checks        = @{ strict = $true; contexts = @('quality') }
-                    enforce_admins                = $true
-                    required_pull_request_reviews = @{ required_approving_review_count = 0 }
-                    restrictions                  = $null
-                } | ConvertTo-Json -Depth 5
-
-                foreach ($branch in @('dev', 'main')) {
-                    try {
-                        $protectionBody | gh api --method PUT "repos/$nameWithOwner/branches/$branch/protection" --input -
-                        if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE (branch protection no suele estar disponible en repos privados sin GitHub Pro/Team)" }
-                        Write-Ok "branch protection activada en '$branch'"
-                    } catch {
-                        Write-Note "no se pudo activar branch protection en '$branch': $($_.Exception.Message)"
-                        Add-ManualStep "Activar branch protection en '$branch' a mano (Settings -> Branches): check 'quality' requerido, strict, enforce admins — ver la seccion 2.5 (Configurar GitHub) del README.md"
-                    }
-                }
-
-                # Secret scanning + push protection: la capa de servidor del escaneo de secretos (ver
-                # SECURITY.md) — GitHub rechaza el push aunque nadie tenga la red local activada.
-                # Gratis en repos públicos; en privados exige GitHub Secret Protection, así que un
-                # fallo aquí es esperable y queda como paso manual.
-                $secretScanningBody = @{
-                    security_and_analysis = @{
-                        secret_scanning                 = @{ status = 'enabled' }
-                        secret_scanning_push_protection = @{ status = 'enabled' }
-                    }
-                } | ConvertTo-Json -Depth 5
-
-                try {
-                    $secretScanningBody | gh api --method PATCH "repos/$nameWithOwner" --input - | Out-Null
-                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE (en repos privados requiere GitHub Secret Protection)" }
-                    # Un PATCH aceptado no garantiza el cambio: se lee el estado real antes de darlo por hecho.
-                    $pushProtection = gh api "repos/$nameWithOwner" -q '.security_and_analysis.secret_scanning_push_protection.status'
-                    if ($pushProtection -ne 'enabled') { throw "GitHub aceptó la petición pero push protection sigue en '$pushProtection' (en repos privados requiere GitHub Secret Protection)" }
-                    Write-Ok 'secret scanning y push protection activados'
-                } catch {
-                    Write-Note "no se pudo activar secret scanning/push protection: $($_.Exception.Message)"
-                    Add-ManualStep 'Activar secret scanning y push protection a mano (Settings -> Advanced Security) si el plan lo permite — ver la seccion 2.5 (Configurar GitHub) del README.md'
-                }
-
-                # Dependabot alerts: avisan de CVEs en las dependencias. Las PRs de actualización las
-                # define .github/dependabot.yml, que ya viene en el repo; esto solo enciende las alertas.
-                try {
-                    gh api --method PUT "repos/$nameWithOwner/vulnerability-alerts" --silent
-                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE" }
-                    Write-Ok 'Dependabot alerts activadas'
-                } catch {
-                    Write-Note "no se pudieron activar las Dependabot alerts: $($_.Exception.Message)"
-                    Add-ManualStep 'Activar Dependabot alerts a mano (Settings -> Advanced Security -> Dependabot alerts) — ver la seccion 2.5 (Configurar GitHub) del README.md'
-                }
-
-                # Private vulnerability reporting: el canal privado al que remite la sección "Reportar
-                # un problema" de SECURITY.md. Sin él, el formulario Security -> Report a vulnerability
-                # no existe.
-                try {
-                    gh api --method PUT "repos/$nameWithOwner/private-vulnerability-reporting" --silent
-                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE" }
-                    Write-Ok 'private vulnerability reporting activado'
-                } catch {
-                    Write-Note "no se pudo activar private vulnerability reporting: $($_.Exception.Message)"
-                    Add-ManualStep 'Activar private vulnerability reporting a mano (Settings -> Advanced Security) — ver la seccion 2.5 (Configurar GitHub) del README.md'
-                }
-
-                # Exigir acciones fijadas por SHA: ci.yml ya lo cumple; esto impide que una acción
-                # añadida después con @tag llegue a ejecutarse. PUT sobrescribe el objeto entero, así
-                # que se conserva el allowed_actions que tenga el repo.
-                try {
-                    $allowedActions = gh api "repos/$nameWithOwner/actions/permissions" -q '.allowed_actions'
-                    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($allowedActions)) { throw 'no se pudo leer la configuración actual de Actions' }
-                    gh api --method PUT "repos/$nameWithOwner/actions/permissions" -F enabled=true -f "allowed_actions=$allowedActions" -F sha_pinning_required=true --silent
-                    if ($LASTEXITCODE -ne 0) { throw "gh api devolvió el código $LASTEXITCODE" }
-                    Write-Ok 'Actions exige acciones fijadas por SHA'
-                } catch {
-                    Write-Note "no se pudo exigir el fijado por SHA en Actions: $($_.Exception.Message)"
-                    Add-ManualStep 'Exigir acciones fijadas por SHA a mano (Settings -> Actions -> General -> "Require actions to be pinned to a full-length commit SHA") — ver la seccion 2.5 (Configurar GitHub) del README.md'
-                }
-
-                try {
-                    $owner = ($nameWithOwner -split '/')[0]
-                    $projectJson = gh project create --owner $owner --title $ProjectName --format json | ConvertFrom-Json
-                    if ($LASTEXITCODE -ne 0 -or -not $projectJson -or -not $projectJson.number) {
-                        throw 'gh project create no devolvió un proyecto válido (revisa que el token tenga el scope "project": gh auth refresh -s project)'
-                    }
-                    gh project link $projectJson.number --owner $owner --repo $nameWithOwner | Out-Null
-                    if ($LASTEXITCODE -ne 0) { throw "gh project link devolvió el código $LASTEXITCODE" }
-                    Write-Ok "GitHub Project '$ProjectName' creado y vinculado (número $($projectJson.number))"
-                    Add-ManualStep 'Configurar a mano las Workflows nativas del GitHub Project recién creado (Item added/closed, PR merged, Auto-add) — ver checklist de la seccion 2.5 (Configurar GitHub) del README.md'
-                } catch {
-                    Write-Note "no se pudo crear el GitHub Project automáticamente: $($_.Exception.Message)"
-                    Add-ManualStep 'Crear el GitHub Project (Board/Kanban) y vincularlo al repo a mano — ver checklist de la seccion 2.5 (Configurar GitHub) del README.md'
-                }
-            } catch {
-                Write-Note "automatización de GitHub interrumpida: $($_.Exception.Message)"
-                Add-ManualStep 'La configuración de rama/branch protection no terminó bien: revisa el estado en GitHub y completa a mano lo que falte (ver la seccion 2.5 (Configurar GitHub) del README.md)'
-            }
-        }
-    }
+if (-not $SetupGitHub) {
+    Write-Skip '-SetupGitHub no indicado: no se toca nada en GitHub'
+    Add-ManualStep "Configurar el repositorio en GitHub ejecutando: pwsh -File `"$setupGitHubScript`"  (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project). Alternativa manual: el checklist de la seccion 2.5 (Configurar GitHub) del README.md"
+} elseif (-not (Test-Path -LiteralPath $setupGitHubScript)) {
+    Write-Note 'no se encuentra setup-github.ps1 junto a este script; el repo no se generó desde una versión actual de la plantilla'
+    Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project, spending limit)'
 } else {
-    Add-ManualStep 'Completar a mano el checklist de la seccion 2.5 (Configurar GitHub) del README.md (rama dev, branch protection, secret scanning, Dependabot alerts, reporte privado, SHA en Actions, Project) — o relanzar este script con -SetupGitHub'
+    # Los placeholders recién rellenados no se commitean ni se publican aquí: es una decisión humana,
+    # y setup-github.ps1 solo configura el lado del servidor.
+    Add-ManualStep 'Revisar, commitear y publicar los placeholders rellenados de .claude/context/00_perfil_proyecto.md y lo que haya añadido `specify init`'
+
+    $ghArgs = @('-ProjectName', $ProjectName)
+    if ($InstallGh) { $ghArgs += '-InstallGh' }
+
+    & $setupGitHubScript @ghArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Note "setup-github.ps1 terminó con el código $LASTEXITCODE"
+        Add-ManualStep 'Revisar el estado del repositorio en GitHub: setup-github.ps1 no terminó correctamente — ver la seccion 2.5 (Configurar GitHub) del README.md'
+    }
 }
 
-Add-ManualStep 'Fijar Spending limit = $0 en GitHub (Settings -> Billing) — no tiene API/CLI'
 Add-ManualStep 'Activar la red local de .githooks/ si la quieres (pre-commit: escaneo de secretos con gitleaks; pre-push: ruff/ty/pytest/pip-audit antes de cada push, ahorra minutos de Actions): git config core.hooksPath .githooks'
 if (-not (Get-Command 'gitleaks' -ErrorAction SilentlyContinue)) {
     Add-ManualStep 'Instalar gitleaks para que el hook pre-commit escanee secretos (sin él, avisa y deja pasar): winget install Gitleaks.Gitleaks | brew install gitleaks'
@@ -567,7 +399,7 @@ Write-Host 'Automatizado por el script:' -ForegroundColor Green
 Write-Host '  - specify init (.specify/memory/constitution.md)'
 Write-Host '  - datos del proyecto en .claude/context/00_perfil_proyecto.md'
 if ($SetupGitHub) {
-    Write-Host '  - rama dev y (best-effort) branch protection en dev y main / secret scanning y push protection / Dependabot alerts / private vulnerability reporting / SHA obligatorio en Actions / GitHub Project'
+    Write-Host '  - la configuración de GitHub, delegada en setup-github.ps1 (su propio resumen va más arriba)'
 }
 
 Write-Host ''

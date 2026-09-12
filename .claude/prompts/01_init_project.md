@@ -85,10 +85,9 @@ Al terminar, muéstrame el CLAUDE.md generado y pregúntame si hay algún comand
 se te haya escapado antes de darlo por definitivo.
 ```
 
-> La migración de `.claude/context/*.md` a skills de dominio está completa: las cinco familias
-> (`critic-*`, `dev-*`, `db-model-*`, `docs-*`, `git-*`) son skills de carga bajo demanda, y el único
-> fichero de contexto que queda —y por tanto el único import `@` del `CLAUDE.md`— es el perfil del
-> proyecto, que contiene valores y no método.
+> Las cinco familias de convenciones (`critic-*`, `dev-*`, `db-model-*`, `docs-*`, `git-*`) son skills
+> de carga bajo demanda. El único fichero de contexto —y por tanto el único import `@` del
+> `CLAUDE.md`— es el perfil del proyecto, que contiene valores y no método.
 
 ## Revisión final
 

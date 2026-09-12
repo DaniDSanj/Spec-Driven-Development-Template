@@ -1,11 +1,11 @@
 ---
 name: git-run-actions
 description: >
-  Supervisa el CI de una PR: lee el estado del job quality de ci.yml,
-  diagnostica el paso que falla y propone la corrección, sin tocar nunca el
-  workflow. Incluye el coste de minutos de GitHub Actions según la visibilidad
-  del repo y la red local pre-push. Úsalo en el paso 5.7 del ciclo SDD, tras
-  abrir la PR hacia dev.
+  Supervisa el CI de una PR: lee el estado de los jobs quality y
+  source-branch-gate de ci.yml, diagnostica el paso que falla y propone la
+  corrección, sin tocar nunca el workflow. Incluye el coste de minutos de
+  GitHub Actions según la visibilidad del repo y la red local pre-push. Úsalo
+  en el paso 5.7 del ciclo SDD, tras abrir la PR hacia dev.
 ---
 
 # Supervisar el CI de la PR
@@ -15,7 +15,11 @@ el código que se acaba de escribir; y la corrección la aplica el mismo hilo, q
 de la feature.
 
 La PR no se puede mergear hasta que el job `quality` de `.github/workflows/ci.yml` esté en verde
-(`required_status_checks` con `strict: true`, ver `git-update-repo`).
+(`required_status_checks`; en `dev`, además, con `strict: true`: la rama debe estar al día con `dev`.
+Ver `git-update-repo`).
+
+Las PR contra `main` tienen un segundo check requerido, `source-branch-gate`, que no diagnostica
+nada del código: falla si la PR no viene de `dev`. Contra `dev` ni siquiera se ejecuta.
 
 ## Leer el estado
 
@@ -39,6 +43,12 @@ posterior no aparece si uno anterior cortó.
 | `uv run ty check` | Tipado estático | Corregir la anotación; convenciones en `dev-python-coding` |
 | `uv run pytest -q` | Tests | Es un fallo real de la feature: vuelve al paso 4.1, no relajes el test |
 | `Dependency audit (pip-audit)` | Una dependencia de ejecución de `uv.lock` tiene una CVE conocida (el log da paquete, versión, ID y versión corregida). También falla si `uv.lock` no existe o no está al día con `pyproject.toml` (`--frozen`) | Actualizar a la versión corregida (`uv lock --upgrade-package <paquete>`) y volver a correr los tests. Si no hay versión corregida, es decisión del humano: excepción documentada (`--ignore-vuln <ID>` en el paso, con ADR) o sustituir la dependencia. Puede fallar en una PR que no tocó dependencias si la CVE es nueva: no es culpa de la feature, pero hay que resolverlo igual |
+
+Y, fuera del job `quality`, en las PR contra `main`:
+
+| Job | Qué falla | Corrección |
+|---|---|---|
+| `source-branch-gate` | La PR va contra `main` y no viene de `dev` | No se arregla desde la PR: ciérrala y ábrela contra `dev`. `main` solo recibe integraciones de `dev` (ver `git-update-repo`) |
 
 Reproduce siempre en local antes de pushear una corrección — cada intento a ciegas consume minutos de
 Actions y un ciclo de espera.

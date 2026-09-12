@@ -62,3 +62,24 @@ jobs:
         run: |
           uv export --frozen --no-dev --no-emit-project --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
           uvx pip-audit --strict --disable-pip -r "$RUNNER_TEMP/requirements.txt"
+
+  # A `main` solo se llega desde `dev`. GitHub no tiene ningún ajuste nativo de branch protection que
+  # restrinja la rama origen de una PR, así que la regla se fuerza aquí y se exige como required
+  # status check únicamente en `main` (setup-github.ps1 la referencia por este nombre de job).
+  #
+  # En los push a `dev` y en las PR contra `dev`, `base_ref` no es 'main' y el job ni siquiera
+  # aparece: por eso no puede exigirse en `dev`, donde quedaría pendiente para siempre.
+  source-branch-gate:
+    if: github.base_ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar que la PR viene de dev
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          if [ "$HEAD_REF" = "dev" ]; then
+            echo "OK: PR contra main desde '$HEAD_REF'."
+          else
+            echo "::error::Las PR contra main solo se aceptan desde 'dev'. Esta viene de '$HEAD_REF': ciérrala y ábrela contra 'dev'."
+            exit 1
+          fi
